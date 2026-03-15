@@ -32,9 +32,14 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ user, games }) => 
   const currentUser = user || guestUser;
 
   useEffect(() => {
-    if (currentUser.walletAddress) {
-      getChhBalance(currentUser.walletAddress as `0x${string}`).then(setChhBalance);
-    }
+    const fetchBalance = async () => {
+      const address = currentUser.walletAddress;
+      if (address) {
+        getChhBalance(address as `0x${string}`).then(setChhBalance);
+      }
+    };
+    
+    fetchBalance();
   }, [currentUser]);
 
   return (
@@ -88,89 +93,6 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ user, games }) => 
         </div>
       </motion.section>
 
-      {/* ゲーム統計セクション (Farcasterユーザーのみ) */}
-      {currentUser.fid && currentUser.fid !== 'Guest' && (
-        <motion.section
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.1 }}
-          className="grid grid-cols-1 gap-v-md"
-        >
-          <div className="bg-surface p-v-md rounded-v-lg border border-surface shadow-v-sm">
-            <h3 className="text-xs font-black text-primary/60 uppercase tracking-widest mb-v-sm flex items-center gap-2">
-              <span className="w-2 h-2 bg-accent rounded-full"></span>
-              Game Stats
-            </h3>
-            
-            <div className="space-y-4">
-              {/* RunningChihuahua */}
-              <div className="bg-village/50 p-v-md rounded-v-md border border-surface/30">
-                <div className="flex items-center justify-between mb-3">
-                  <span className="text-xs font-bold text-body">RunningChihuahua</span>
-                  <span className="text-[10px] font-mono text-light bg-surface px-2 py-0.5 rounded">STATS</span>
-                </div>
-                <div className="flex gap-6">
-                  <div className="flex flex-col">
-                    <span className="text-[10px] text-light uppercase font-bold">Run</span>
-                    <span className="text-sm font-black text-primary">{currentUser.runningStats?.runCount || 0} <span className="text-[10px]">RUN</span></span>
-                  </div>
-                  <div className="flex flex-col">
-                    <span className="text-[10px] text-light uppercase font-bold">Stamina</span>
-                    <span className="text-sm font-black text-primary">{currentUser.runningStats?.stamina || 0}</span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Reversi */}
-              <div className="bg-village/50 p-v-md rounded-v-md border border-surface/30">
-                <div className="flex items-center justify-between mb-3">
-                  <span className="text-xs font-bold text-body">Reversi</span>
-                  <span className="text-[10px] font-mono text-light bg-surface px-2 py-0.5 rounded">STATS</span>
-                </div>
-                <div className="flex flex-col">
-                  <span className="text-[10px] text-light uppercase font-bold">Wins</span>
-                  <span className="text-sm font-black text-primary">🏆️ {currentUser.reversiStats?.totalWins || 0}</span>
-                </div>
-              </div>
-
-              {/* MiningQuest */}
-              <div className="bg-village/50 p-v-md rounded-v-md border border-surface/30">
-                <div className="flex items-center justify-between mb-3">
-                  <span className="text-xs font-bold text-body">MiningQuest</span>
-                  <span className="text-[10px] font-mono text-light bg-surface px-2 py-0.5 rounded">STATS</span>
-                </div>
-                <div className="grid grid-cols-3 gap-y-4 gap-x-3">
-                  <div className="flex flex-col">
-                    <span className="text-[10px] text-light uppercase font-bold">Quest</span>
-                    <span className="text-sm font-black text-primary">📜 {currentUser.miningStats?.questCount || 0}</span>
-                  </div>
-                  <div className="flex flex-col">
-                    <span className="text-[10px] text-light uppercase font-bold">Hero</span>
-                    <span className="text-sm font-black text-primary">🐕️ {currentUser.miningStats?.gachaHeroCount || 0}</span>
-                  </div>
-                  <div className="flex flex-col">
-                    <span className="text-[10px] text-light uppercase font-bold">Equip</span>
-                    <span className="text-sm font-black text-primary">⛏️ {currentUser.miningStats?.gachaEquipmentCount || 0}</span>
-                  </div>
-                  <div className="flex flex-col">
-                    <span className="text-[10px] text-light uppercase font-bold">Potion</span>
-                    <span className="text-sm font-black text-primary">{currentUser.miningStats?.item01 || 0}</span>
-                  </div>
-                  <div className="flex flex-col">
-                    <span className="text-[10px] text-light uppercase font-bold">Elixir</span>
-                    <span className="text-sm font-black text-primary">{currentUser.miningStats?.item02 || 0}</span>
-                  </div>
-                  <div className="flex flex-col">
-                    <span className="text-[10px] text-light uppercase font-bold">Stone</span>
-                    <span className="text-sm font-black text-primary">🪨 {currentUser.miningStats?.item03 || 0}</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </motion.section>
-      )}
-
       {/* ゲーム一覧セクション */}
       <section>
         <h3 className="text-lg font-bold text-primary mb-v-md flex items-center gap-2">
@@ -186,41 +108,101 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ user, games }) => 
               transition={{ delay: index * 0.1 }}
             >
               <div 
-                className="flex bg-surface rounded-v-lg shadow-v-md border border-surface overflow-hidden h-32 group hover:shadow-v-lg transition-shadow duration-300"
+                className="flex flex-col bg-surface rounded-v-lg shadow-v-md border border-surface overflow-hidden group hover:shadow-v-lg transition-shadow duration-300"
                 style={{ borderLeft: `4px solid ${game.color}` }}
               >
-                {/* アイコンを枠と同じ高さで表示 */}
-                <div className="w-32 h-full bg-village flex-shrink-0 relative overflow-hidden">
-                  <img 
-                    src={game.iconUrl} 
-                    alt={game.title} 
-                    className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" 
-                    referrerPolicy="no-referrer" 
-                  />
-                  <div className="absolute inset-0 bg-black/10 group-hover:bg-transparent transition-colors duration-300" />
-                </div>
-                
-                <div className="flex-1 p-v-md flex flex-col justify-between">
-                  <div>
-                    <h4 className="font-black text-lg text-body leading-tight mb-1">{game.title}</h4>
-                    <p className="text-xs text-light line-clamp-2">{game.description}</p>
+                <div className="flex min-h-32">
+                  {/* アイコンを枠と同じ高さで表示 */}
+                  <div className="w-32 bg-village flex-shrink-0 relative overflow-hidden">
+                    <img 
+                      src={game.iconUrl} 
+                      alt={game.title} 
+                      className="absolute inset-0 w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" 
+                      referrerPolicy="no-referrer" 
+                    />
+                    <div className="absolute inset-0 bg-black/10 group-hover:bg-transparent transition-colors duration-300" />
                   </div>
                   
-                  <div className="flex justify-end">
-                    <Button 
-                      variant="primary" 
-                      size="sm"
-                      className="flex items-center gap-2 px-v-lg"
-                      onClick={() => {
-                        const isFarcaster = window.location.href.includes('farcaster');
-                        window.open(isFarcaster ? game.farcasterUrl : game.url, '_blank');
-                      }}
-                    >
-                      <Play size={14} fill="currentColor" />
-                      <span className="text-xs font-black">START</span>
-                    </Button>
+                  <div className="flex-1 p-v-md flex flex-col justify-between">
+                    <div>
+                      <h4 className="font-black text-lg text-body leading-tight mb-1">{game.title}</h4>
+                      <p className="text-xs text-light line-clamp-2">{game.description}</p>
+                    </div>
+                    
+                    <div className="flex justify-end mt-2">
+                      <Button 
+                        variant="primary" 
+                        size="sm"
+                        className="flex items-center gap-2 px-v-lg"
+                        onClick={() => {
+                          const isFarcaster = window.location.href.includes('farcaster');
+                          window.open(isFarcaster ? game.farcasterUrl : game.url, '_blank');
+                        }}
+                      >
+                        <Play size={14} fill="currentColor" />
+                        <span className="text-xs font-black">START</span>
+                      </Button>
+                    </div>
                   </div>
                 </div>
+
+                {/* Game Stats Section */}
+                {currentUser.fid && currentUser.fid !== 'Guest' && (
+                  <div className="bg-village/30 border-t border-surface/50 p-v-md">
+                    {game.id === 'running' && (
+                      <div className="flex gap-6">
+                        <div className="flex flex-col">
+                          <span className="text-[10px] text-light uppercase font-bold">Run</span>
+                          <span className="text-sm font-black text-primary">{currentUser.runningStats?.runCount || 0} <span className="text-[10px]">RUN</span></span>
+                        </div>
+                        <div className="flex flex-col">
+                          <span className="text-[10px] text-light uppercase font-bold">Stamina</span>
+                          <span className="text-sm font-black text-primary">{currentUser.runningStats?.stamina || 0}</span>
+                        </div>
+                      </div>
+                    )}
+                    {game.id === 'reversi' && (
+                      <div className="flex flex-col">
+                        <span className="text-[10px] text-light uppercase font-bold">Wins</span>
+                        <span className="text-sm font-black text-primary">🏆️ {currentUser.reversiStats?.totalWins || 0}</span>
+                      </div>
+                    )}
+                    {game.id === 'mining' && (
+                      <div className="grid grid-cols-3 gap-y-4 gap-x-3">
+                        <div className="flex flex-col">
+                          <span className="text-[10px] text-light uppercase font-bold">Quest</span>
+                          <span className="text-sm font-black text-primary">📜 {currentUser.miningStats?.questCount || 0}</span>
+                        </div>
+                        <div className="flex flex-col">
+                          <span className="text-[10px] text-light uppercase font-bold">Hero</span>
+                          <span className="text-sm font-black text-primary">🐕️ {currentUser.miningStats?.gachaHeroCount || 0}</span>
+                        </div>
+                        <div className="flex flex-col">
+                          <span className="text-[10px] text-light uppercase font-bold">Equip</span>
+                          <span className="text-sm font-black text-primary">⛏️ {currentUser.miningStats?.gachaEquipmentCount || 0}</span>
+                        </div>
+                        <div className="flex flex-col">
+                          <span className="text-[10px] text-light uppercase font-bold">Potion</span>
+                          <span className="text-sm font-black text-primary">{currentUser.miningStats?.item01 || 0}</span>
+                        </div>
+                        <div className="flex flex-col">
+                          <span className="text-[10px] text-light uppercase font-bold">Elixir</span>
+                          <span className="text-sm font-black text-primary">{currentUser.miningStats?.item02 || 0}</span>
+                        </div>
+                        <div className="flex flex-col">
+                          <span className="text-[10px] text-light uppercase font-bold">Stone</span>
+                          <span className="text-sm font-black text-primary">🪨 {currentUser.miningStats?.item03 || 0}</span>
+                        </div>
+                      </div>
+                    )}
+                    {game.id === 'quest' && (
+                      <div className="flex flex-col">
+                        <span className="text-[10px] text-light uppercase font-bold">Status</span>
+                        <span className="text-sm font-black text-primary">No stats available</span>
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
             </motion.div>
           ))}

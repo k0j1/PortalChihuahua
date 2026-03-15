@@ -116,6 +116,11 @@ export class GameService {
       const miningScore = questRes.data?.total_reward || 0;
       const totalScore = Math.floor(runningScore + reversiScore + miningScore);
 
+      // Get overall ranking to find user's rank
+      const overallRanking = await this.getOverallRanking();
+      const userRankEntry = overallRanking.find(entry => entry.username === userData.username);
+      const overallRank = userRankEntry ? userRankEntry.rank : 0;
+
       return new UserProfile(
         userData.fid.toString(),
         userData.display_name || userData.username || 'Unknown',
@@ -124,7 +129,7 @@ export class GameService {
         userData.pfp_url || 'https://picsum.photos/seed/chihuahua/100/100',
         '🐶',
         totalScore,
-        0, // Rank will be calculated or fetched separately if needed
+        overallRank,
         userData.custody_address || '',
         userData.fid.toString(),
         runningRes.data ? { runCount: runningRes.data.run_count || 0, stamina: runningRes.data.stamina || 0 } : undefined,
@@ -145,17 +150,53 @@ export class GameService {
   }
 
   public async getOverallRanking(): Promise<RankingEntry[]> {
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        resolve([
-          new RankingEntry(1, 'キングチワワ', 99999, '2026-03-14'),
-          new RankingEntry(2, 'ポチ', 85000, '2026-03-13'),
-          new RankingEntry(3, 'ハチ', 72000, '2026-03-12'),
-          new RankingEntry(4, 'シロ', 64000, '2026-03-11'),
-          new RankingEntry(5, 'クロ', 58000, '2026-03-10'),
-        ]);
-      }, 500);
-    });
+    try {
+      const [runningRes, reversiRes, miningRes] = await Promise.all([
+        supabase.from('running_player_stats').select('fid, total_score, farcaster_users(username, display_name, pfp_url)'),
+        supabase.from('reversi_game_stats').select('fid, claimed_score, farcaster_users(username, display_name, pfp_url)'),
+        supabase.from('quest_player_stats').select('fid, total_reward, farcaster_users(username, display_name, pfp_url)')
+      ]);
+
+      if (runningRes.error) throw runningRes.error;
+      if (reversiRes.error) throw reversiRes.error;
+      if (miningRes.error) throw miningRes.error;
+
+      const aggregated: Record<string, { score: number, user: any }> = {};
+
+      const processStats = (data: any[], scoreKey: string, multiplier: number = 1) => {
+        data.forEach(item => {
+          const fid = item.fid;
+          const score = (item[scoreKey] || 0) * multiplier;
+          const user = Array.isArray(item.farcaster_users) ? item.farcaster_users[0] : item.farcaster_users;
+          
+          if (!aggregated[fid]) {
+            aggregated[fid] = { score: 0, user };
+          }
+          aggregated[fid].score += score;
+          if (!aggregated[fid].user && user) {
+            aggregated[fid].user = user;
+          }
+        });
+      };
+
+      processStats(runningRes.data || [], 'total_score', 0.05);
+      processStats(reversiRes.data || [], 'claimed_score');
+      processStats(miningRes.data || [], 'total_reward');
+
+      return Object.values(aggregated)
+        .sort((a, b) => b.score - a.score)
+        .map((item, idx) => new RankingEntry(
+          idx + 1,
+          item.user?.display_name || item.user?.username || 'Unknown',
+          Math.floor(item.score),
+          '',
+          item.user?.pfp_url,
+          item.user?.username
+        ));
+    } catch (error) {
+      console.error('Error fetching overall ranking:', error);
+      return [];
+    }
   }
 
   public async getActivityLogs(): Promise<ActivityLog[]> {
