@@ -1,0 +1,17 @@
+{
+  "accountAssociation": {
+    "header": "",
+    "payload": "",
+    "signature": ""
+  },
+  "frame": {
+    "version": "1",
+    "name": "My Mini App",
+    "iconUrl": "https://picsum.photos/seed/icon/200/200",
+    "homeUrl": "https://example.com",
+    "imageUrl": "https://picsum.photos/seed/miniapp/600/400",
+    "buttonTitle": "Open App",
+    "splashImageUrl": "https://picsum.photos/seed/splash/200/200",
+    "splashBackgroundColor": "#f7f7f7"
+  }
+}

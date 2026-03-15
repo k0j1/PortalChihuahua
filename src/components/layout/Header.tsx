@@ -8,7 +8,7 @@ interface HeaderProps {
 export const Header: React.FC<HeaderProps> = ({ user }) => {
   return (
     <header className="fixed top-0 left-0 right-0 z-40 bg-primary text-inverse shadow-v-md safe-area-pt">
-      <div className="flex items-center justify-between px-v-md py-v-sm">
+      <div className="flex items-center justify-between px-v-md py-v-lg">
         <h1 className="text-lg font-bold tracking-tight">チワワの秘密基地</h1>
         <div className="flex items-center gap-v-sm">
           <span className="text-sm font-medium opacity-90">{user?.name || 'Guest'}</span>

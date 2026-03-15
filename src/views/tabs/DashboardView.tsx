@@ -66,21 +66,21 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ user, games }) => 
           <p className="text-sm text-light font-mono mb-v-md">{currentUser.farcasterId === 'Guest' ? 'Guest User' : `@${currentUser.username}`}</p>
           
           <div className="flex gap-v-md w-full max-w-xs mb-v-md">
-            <div className="flex-1 bg-village p-v-sm rounded-v-md text-center border border-surface">
+            <div className="flex-1 bg-village p-v-md rounded-v-md text-center border border-surface">
               <p className="text-xs text-light font-bold mb-1">$CHH保有枚数</p>
               <p className="text-lg font-black text-primary">{parseFloat(chhBalance).toLocaleString()}</p>
             </div>
           </div>
 
           <div className="flex gap-v-md w-full max-w-xs">
-            <div className="flex-1 bg-village p-v-sm rounded-v-md text-center border border-surface">
+            <div className="flex-1 bg-village p-v-md rounded-v-md text-center border border-surface">
               <p className="text-xs text-light font-bold mb-1">総合リワード</p>
               <div className="flex items-baseline justify-center gap-1">
                 <p className="text-lg font-black text-accent">{currentUser.totalScore.toLocaleString()}</p>
                 <span className="text-[10px] font-bold text-accent">CHH</span>
               </div>
             </div>
-            <div className="flex-1 bg-village p-v-sm rounded-v-md text-center border border-surface">
+            <div className="flex-1 bg-village p-v-md rounded-v-md text-center border border-surface">
               <p className="text-xs text-light font-bold mb-1">総合ランク</p>
               <p className="text-lg font-black text-secondary">{currentUser.overallRank > 0 ? `${currentUser.overallRank}位` : '-'}</p>
             </div>
@@ -102,14 +102,14 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ user, games }) => 
               Game Stats
             </h3>
             
-            <div className="space-y-3">
+            <div className="space-y-4">
               {/* RunningChihuahua */}
-              <div className="bg-village/50 p-3 rounded-v-md border border-surface/30">
-                <div className="flex items-center justify-between mb-2">
+              <div className="bg-village/50 p-v-md rounded-v-md border border-surface/30">
+                <div className="flex items-center justify-between mb-3">
                   <span className="text-xs font-bold text-body">RunningChihuahua</span>
                   <span className="text-[10px] font-mono text-light bg-surface px-2 py-0.5 rounded">STATS</span>
                 </div>
-                <div className="flex gap-4">
+                <div className="flex gap-6">
                   <div className="flex flex-col">
                     <span className="text-[10px] text-light uppercase font-bold">Run</span>
                     <span className="text-sm font-black text-primary">{currentUser.runningStats?.runCount || 0} <span className="text-[10px]">RUN</span></span>
@@ -122,8 +122,8 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ user, games }) => 
               </div>
 
               {/* Reversi */}
-              <div className="bg-village/50 p-3 rounded-v-md border border-surface/30">
-                <div className="flex items-center justify-between mb-2">
+              <div className="bg-village/50 p-v-md rounded-v-md border border-surface/30">
+                <div className="flex items-center justify-between mb-3">
                   <span className="text-xs font-bold text-body">Reversi</span>
                   <span className="text-[10px] font-mono text-light bg-surface px-2 py-0.5 rounded">STATS</span>
                 </div>
@@ -134,12 +134,12 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ user, games }) => 
               </div>
 
               {/* MiningQuest */}
-              <div className="bg-village/50 p-3 rounded-v-md border border-surface/30">
-                <div className="flex items-center justify-between mb-2">
+              <div className="bg-village/50 p-v-md rounded-v-md border border-surface/30">
+                <div className="flex items-center justify-between mb-3">
                   <span className="text-xs font-bold text-body">MiningQuest</span>
                   <span className="text-[10px] font-mono text-light bg-surface px-2 py-0.5 rounded">STATS</span>
                 </div>
-                <div className="grid grid-cols-3 gap-y-3 gap-x-2">
+                <div className="grid grid-cols-3 gap-y-4 gap-x-3">
                   <div className="flex flex-col">
                     <span className="text-[10px] text-light uppercase font-bold">Quest</span>
                     <span className="text-sm font-black text-primary">📜 {currentUser.miningStats?.questCount || 0}</span>

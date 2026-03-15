@@ -1,8 +1,17 @@
 import { createPublicClient, http, parseAbi, formatUnits } from 'viem';
 import { base } from 'viem/chains';
+import { Alchemy, Network, AssetTransfersCategory } from 'alchemy-sdk';
 
-const ALCHEMY_URL = 'https://base-mainnet.g.alchemy.com/v2/y4ylt3H0bLrzPvadrGl0M';
+const ALCHEMY_API_KEY = import.meta.env.VITE_ALCHEMY_API_KEY || 'y4ylt3H0bLrzPvadrGl0M';
+const ALCHEMY_URL = `https://base-mainnet.g.alchemy.com/v2/${ALCHEMY_API_KEY}`;
 const CHH_CONTRACT = '0xb0525542e3d818460546332e76e511562dff9b07';
+
+const alchemyConfig = {
+  apiKey: ALCHEMY_API_KEY,
+  network: Network.BASE_MAINNET,
+};
+
+const alchemy = new Alchemy(alchemyConfig);
 
 const client = createPublicClient({
   chain: base,
@@ -24,33 +33,82 @@ export const getChhBalance = async (address: `0x${string}`) => {
   }
 };
 
-export const getRecentLogs = async () => {
-  const contracts = [
+export const getRecentActivity = async () => {
+  const fromContracts = [
     '0x65F5661319C4d23c973C806e1e006Bb06d5557D2',
     '0x9B9191f213Afe0588570028174C97b3751c20Db0',
-    '0x0d013d7DC17E8240595778D1db7241f176Ca51F9',
-    '0x38156DB0e482EB3a5C198d49917fdb6746344db1'
+    '0x38156DB0e482EB3a5C198d49917fdb6746344db1',
+    '0x193708bB0AC212E59fc44d6D6F3507F25Bc97fd4'
+  ];
+
+  const toContracts = [
+    '0x29521909C3b09Bd7861fAD32A49d12414C296c5A',
+    '0xaDe81D78B1380b3153BBC1c16116b890FcE41d00',
+    '0xDdE103F5bbf19f0F5d177BE983C76e2a16D36416',
+    '0x0d013d7DC17E8240595778D1db7241f176Ca51F9'
   ];
   
   try {
-    const response = await fetch(ALCHEMY_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        jsonrpc: '2.0',
-        id: 1,
-        method: 'eth_getLogs',
-        params: [{
-          address: contracts,
-          fromBlock: 'latest',
-          toBlock: 'latest'
-        }]
+    const fromPromises = fromContracts.map(contract => 
+      alchemy.core.getAssetTransfers({
+        fromAddress: contract,
+        category: [
+          AssetTransfersCategory.EXTERNAL,
+          AssetTransfersCategory.ERC20,
+          AssetTransfersCategory.ERC721,
+          AssetTransfersCategory.ERC1155
+        ],
+        withMetadata: true,
+        maxCount: 100,
+        order: 'desc' as any,
+        toBlock: 'latest',
       })
-    });
-    const data = await response.json();
-    return data.result || [];
+    );
+
+    const toPromises = toContracts.map(contract => 
+      alchemy.core.getAssetTransfers({
+        toAddress: contract,
+        category: [
+          AssetTransfersCategory.EXTERNAL,
+          AssetTransfersCategory.ERC20,
+          AssetTransfersCategory.ERC721,
+          AssetTransfersCategory.ERC1155
+        ],
+        withMetadata: true,
+        maxCount: 100,
+        order: 'desc' as any,
+        toBlock: 'latest',
+      })
+    );
+
+    const results = await Promise.all([...fromPromises, ...toPromises]);
+    
+    // 1ヶ月前の日時を計算
+    const oneMonthAgo = new Date();
+    oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1);
+    const oneMonthAgoTime = oneMonthAgo.getTime();
+
+    const mergedTransfers = results.flatMap(res => res.transfers)
+      .filter(transfer => {
+        if (!transfer.metadata.blockTimestamp) return false;
+        const txTime = new Date(transfer.metadata.blockTimestamp).getTime();
+        return txTime >= oneMonthAgoTime; // 1ヶ月以内のトランザクションのみ
+      })
+      .sort((a, b) => {
+        const timeA = new Date(a.metadata.blockTimestamp).getTime();
+        const timeB = new Date(b.metadata.blockTimestamp).getTime();
+        return timeB - timeA; // 日付の降順（最新が上）
+      })
+      .slice(0, 100);
+
+    return mergedTransfers;
   } catch (error) {
-    console.error('Failed to fetch logs', error);
+    console.error('Failed to fetch asset transfers', error);
     return [];
   }
+};
+
+// 互換性のために残す
+export const getRecentLogs = async () => {
+  return getRecentActivity();
 };

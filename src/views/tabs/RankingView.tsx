@@ -195,8 +195,8 @@ export const RankingView: React.FC<RankingViewProps> = ({ games }) => {
       </h2>
 
       {/* タブナビゲーション */}
-      <div className="bg-village/30 p-2 rounded-v-2xl mb-v-lg overflow-x-auto hide-scrollbar border border-surface/30">
-        <div className="flex gap-2 min-w-max">
+      <div className="bg-village/30 p-v-sm rounded-v-2xl mb-v-lg overflow-x-auto hide-scrollbar border border-surface/30">
+        <div className="flex gap-v-sm min-w-max">
           {tabs.map((tab) => (
             <button
               key={tab.id}
@@ -225,7 +225,7 @@ export const RankingView: React.FC<RankingViewProps> = ({ games }) => {
             {error}
           </div>
         ) : rankings.length > 0 ? (
-          <ul className="flex-1 overflow-y-auto p-v-sm space-y-2">
+          <ul className="flex-1 overflow-y-auto p-v-md space-y-3">
             {rankings.map((entry, idx) => (
               <motion.li 
                 key={`${entry.rank}-${entry.playerName}`}
