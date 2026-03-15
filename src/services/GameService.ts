@@ -3,6 +3,7 @@ import { RankingEntry } from '../models/RankingEntry';
 import { UserProfile } from '../models/UserProfile';
 import { ActivityLog } from '../models/ActivityLog';
 import { supabase } from './supabaseClient';
+import sdk from '@farcaster/frame-sdk';
 
 export class GameService {
   private static instance: GameService;
@@ -62,8 +63,19 @@ export class GameService {
   }
 
   public async getUserProfile(): Promise<UserProfile | null> {
-    const urlParams = new URLSearchParams(window.location.search);
-    const fidParam = urlParams.get('fid');
+    let fidParam: string | undefined;
+    
+    try {
+      const context = await sdk.context;
+      fidParam = context?.user?.fid?.toString();
+    } catch (e) {
+      console.error('Error getting sdk context:', e);
+    }
+    
+    if (!fidParam) {
+      const urlParams = new URLSearchParams(window.location.search);
+      fidParam = urlParams.get('fid') || undefined;
+    }
     
     if (!fidParam) return null;
 
