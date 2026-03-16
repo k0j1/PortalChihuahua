@@ -11,6 +11,7 @@ export class GameService {
   private constructor() {}
 
   private activityLogs: ActivityLog[] | null = null;
+  private rankingCache: Record<string, RankingEntry[]> = {};
 
   public static getInstance(): GameService {
     if (!GameService.instance) {
@@ -29,6 +30,18 @@ export class GameService {
 
   public clearActivityLogs(): void {
     this.activityLogs = null;
+  }
+
+  public setRankingCache(gameId: string, ranking: RankingEntry[]): void {
+    this.rankingCache[gameId] = ranking;
+  }
+
+  public getRankingCache(gameId: string): RankingEntry[] | null {
+    return this.rankingCache[gameId] || null;
+  }
+
+  public clearRankingCache(): void {
+    this.rankingCache = {};
   }
 
   public getGames(): GameInfo[] {

@@ -48,9 +48,19 @@ export const getRecentActivity = async () => {
     '0x0d013d7DC17E8240595778D1db7241f176Ca51F9'
   ];
   
+  const fetchWithRetry = async (fn: () => Promise<any>) => {
+    try {
+      return await fn();
+    } catch (error) {
+      console.warn('Fetch failed, retrying in 1s...', error);
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      return await fn();
+    }
+  };
+
   try {
     const fromPromises = fromContracts.map(contract => 
-      alchemy.core.getAssetTransfers({
+      fetchWithRetry(() => alchemy.core.getAssetTransfers({
         fromAddress: contract,
         category: [
           AssetTransfersCategory.EXTERNAL,
@@ -62,11 +72,11 @@ export const getRecentActivity = async () => {
         maxCount: 100,
         order: 'desc' as any,
         toBlock: 'latest',
-      })
+      }))
     );
 
     const toPromises = toContracts.map(contract => 
-      alchemy.core.getAssetTransfers({
+      fetchWithRetry(() => alchemy.core.getAssetTransfers({
         toAddress: contract,
         category: [
           AssetTransfersCategory.EXTERNAL,
@@ -78,7 +88,7 @@ export const getRecentActivity = async () => {
         maxCount: 100,
         order: 'desc' as any,
         toBlock: 'latest',
-      })
+      }))
     );
 
     const results = await Promise.all([...fromPromises, ...toPromises]);

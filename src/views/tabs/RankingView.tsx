@@ -3,7 +3,8 @@ import { motion } from 'motion/react';
 import { supabase } from '../../services/supabaseClient';
 import { RankingEntry } from '../../models/RankingEntry';
 import { GameInfo } from '../../models/GameInfo';
-import { Trophy } from 'lucide-react';
+import { Trophy, RefreshCcw } from 'lucide-react';
+import { GameService } from '../../services/GameService';
 
 interface RankingViewProps {
   games: GameInfo[];
@@ -15,6 +16,180 @@ export const RankingView: React.FC<RankingViewProps> = ({ games }) => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  const fetchRanking = async (forceRefresh = false) => {
+    const gameService = GameService.getInstance();
+    const cachedRanking = gameService.getRankingCache(activeTab);
+
+    if (!forceRefresh && cachedRanking) {
+      setRankings(cachedRanking);
+      return;
+    }
+
+    setIsLoading(true);
+    setError(null);
+    try {
+      let rankingsData: RankingEntry[] = [];
+
+      if (activeTab === 'overall') {
+        // 総合ランキング: 各ゲームのスコアを合算
+        // RunningChihuahua: total_score * 0.05
+        // Reversi: claimed_score
+        // MiningQuest: total_reward
+        const [runningRes, reversiRes, miningRes] = await Promise.all([
+          supabase.from('running_player_stats').select('fid, total_score, farcaster_users(username, display_name, pfp_url)'),
+          supabase.from('reversi_game_stats').select('fid, claimed_score, farcaster_users(username, display_name, pfp_url)'),
+          supabase.from('quest_player_stats').select('fid, total_reward, farcaster_users(username, display_name, pfp_url)')
+        ]);
+
+        if (runningRes.error) throw runningRes.error;
+        if (reversiRes.error) throw reversiRes.error;
+        if (miningRes.error) throw miningRes.error;
+
+        const aggregated: Record<string, { score: number, user: any }> = {};
+
+        const processStats = (data: any[], scoreKey: string, multiplier: number = 1) => {
+          data.forEach(item => {
+            const fid = item.fid;
+            const score = (item[scoreKey] || 0) * multiplier;
+            const user = Array.isArray(item.farcaster_users) ? item.farcaster_users[0] : item.farcaster_users;
+            
+            if (!aggregated[fid]) {
+              aggregated[fid] = { score: 0, user };
+            }
+            aggregated[fid].score += score;
+            if (!aggregated[fid].user && user) {
+              aggregated[fid].user = user;
+            }
+          });
+        };
+
+        processStats(runningRes.data || [], 'total_score', 0.05);
+        processStats(reversiRes.data || [], 'claimed_score');
+        processStats(miningRes.data || [], 'total_reward');
+
+        rankingsData = Object.values(aggregated)
+          .sort((a, b) => b.score - a.score)
+          .slice(0, 30)
+          .map((item, idx) => new RankingEntry(
+            idx + 1,
+            item.user?.display_name || item.user?.username || 'Unknown',
+            Math.floor(item.score),
+            '',
+            item.user?.pfp_url,
+            item.user?.username
+          ));
+      } else if (activeTab === 'running') {
+        const { data, error } = await supabase
+          .from('running_player_stats')
+          .select(`
+            total_score,
+            farcaster_users!inner (
+              username,
+              display_name,
+              pfp_url
+            )
+          `)
+          .order('total_score', { ascending: false })
+          .limit(100);
+
+        if (error) throw error;
+        
+        rankingsData = data.map((r: any, idx: number) => {
+          const user = Array.isArray(r.farcaster_users) ? r.farcaster_users[0] : r.farcaster_users;
+          return new RankingEntry(
+            idx + 1,
+            user?.display_name || user?.username || 'Unknown',
+            r.total_score,
+            '',
+            user?.pfp_url,
+            user?.username
+          );
+        });
+      } else if (activeTab === 'reversi') {
+        const { data, error } = await supabase
+          .from('reversi_game_stats')
+          .select(`
+            claimed_score,
+            farcaster_users!inner (
+              username,
+              display_name,
+              pfp_url
+            )
+          `)
+          .order('claimed_score', { ascending: false })
+          .limit(100);
+
+        if (error) throw error;
+        
+        rankingsData = data.map((r: any, idx: number) => {
+          const user = Array.isArray(r.farcaster_users) ? r.farcaster_users[0] : r.farcaster_users;
+          return new RankingEntry(
+            idx + 1,
+            user?.display_name || user?.username || 'Unknown',
+            r.claimed_score,
+            '',
+            user?.pfp_url,
+            user?.username
+          );
+        });
+      } else if (activeTab === 'mining') {
+        const { data, error } = await supabase
+          .from('quest_player_stats')
+          .select(`
+            total_reward,
+            farcaster_users!inner (
+              username,
+              display_name,
+              pfp_url
+            )
+          `)
+          .order('total_reward', { ascending: false })
+          .limit(100);
+
+        if (error) throw error;
+        
+        rankingsData = data.map((r: any, idx: number) => {
+          const user = Array.isArray(r.farcaster_users) ? r.farcaster_users[0] : r.farcaster_users;
+          return new RankingEntry(
+            idx + 1,
+            user?.display_name || user?.username || 'Unknown',
+            r.total_reward,
+            '',
+            user?.pfp_url,
+            user?.username
+          );
+        });
+      } else {
+        const { data, error } = await supabase
+          .from('rankings')
+          .select('*')
+          .eq('game_id', activeTab)
+          .order('score', { ascending: false })
+          .limit(100);
+
+        if (error) throw error;
+        
+        rankingsData = data.map((r: any, idx: number) => new RankingEntry(
+          idx + 1, 
+          r.player_name, 
+          r.score, 
+          new Date(r.updated_at).toLocaleDateString()
+        ));
+      }
+      
+      setRankings(rankingsData);
+      gameService.setRankingCache(activeTab, rankingsData);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'ランキングの取得に失敗しました');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchRanking();
+  }, [activeTab]);
+
   const tabs = [
     { id: 'overall', title: '総合リワード', icon: '🏆' },
     { id: 'running', title: 'ランニング', icon: '🐕' },
@@ -22,177 +197,22 @@ export const RankingView: React.FC<RankingViewProps> = ({ games }) => {
     { id: 'mining', title: 'マイニング', icon: '⛏️' }
   ];
 
-  useEffect(() => {
-    const fetchRanking = async () => {
-      setIsLoading(true);
-      setError(null);
-      try {
-        let rankingsData: RankingEntry[] = [];
-
-        if (activeTab === 'overall') {
-          // 総合ランキング: 各ゲームのスコアを合算
-          // RunningChihuahua: total_score * 0.05
-          // Reversi: claimed_score
-          // MiningQuest: total_reward
-          const [runningRes, reversiRes, miningRes] = await Promise.all([
-            supabase.from('running_player_stats').select('fid, total_score, farcaster_users(username, display_name, pfp_url)'),
-            supabase.from('reversi_game_stats').select('fid, claimed_score, farcaster_users(username, display_name, pfp_url)'),
-            supabase.from('quest_player_stats').select('fid, total_reward, farcaster_users(username, display_name, pfp_url)')
-          ]);
-
-          if (runningRes.error) throw runningRes.error;
-          if (reversiRes.error) throw reversiRes.error;
-          if (miningRes.error) throw miningRes.error;
-
-          const aggregated: Record<string, { score: number, user: any }> = {};
-
-          const processStats = (data: any[], scoreKey: string, multiplier: number = 1) => {
-            data.forEach(item => {
-              const fid = item.fid;
-              const score = (item[scoreKey] || 0) * multiplier;
-              const user = Array.isArray(item.farcaster_users) ? item.farcaster_users[0] : item.farcaster_users;
-              
-              if (!aggregated[fid]) {
-                aggregated[fid] = { score: 0, user };
-              }
-              aggregated[fid].score += score;
-              if (!aggregated[fid].user && user) {
-                aggregated[fid].user = user;
-              }
-            });
-          };
-
-          processStats(runningRes.data || [], 'total_score', 0.05);
-          processStats(reversiRes.data || [], 'claimed_score');
-          processStats(miningRes.data || [], 'total_reward');
-
-          rankingsData = Object.values(aggregated)
-            .sort((a, b) => b.score - a.score)
-            .slice(0, 30)
-            .map((item, idx) => new RankingEntry(
-              idx + 1,
-              item.user?.display_name || item.user?.username || 'Unknown',
-              Math.floor(item.score),
-              '',
-              item.user?.pfp_url,
-              item.user?.username
-            ));
-        } else if (activeTab === 'running') {
-          const { data, error } = await supabase
-            .from('running_player_stats')
-            .select(`
-              total_score,
-              farcaster_users!inner (
-                username,
-                display_name,
-                pfp_url
-              )
-            `)
-            .order('total_score', { ascending: false })
-            .limit(100);
-
-          if (error) throw error;
-          
-          rankingsData = data.map((r: any, idx: number) => {
-            const user = Array.isArray(r.farcaster_users) ? r.farcaster_users[0] : r.farcaster_users;
-            return new RankingEntry(
-              idx + 1,
-              user?.display_name || user?.username || 'Unknown',
-              r.total_score,
-              '',
-              user?.pfp_url,
-              user?.username
-            );
-          });
-        } else if (activeTab === 'reversi') {
-          const { data, error } = await supabase
-            .from('reversi_game_stats')
-            .select(`
-              claimed_score,
-              farcaster_users!inner (
-                username,
-                display_name,
-                pfp_url
-              )
-            `)
-            .order('claimed_score', { ascending: false })
-            .limit(100);
-
-          if (error) throw error;
-          
-          rankingsData = data.map((r: any, idx: number) => {
-            const user = Array.isArray(r.farcaster_users) ? r.farcaster_users[0] : r.farcaster_users;
-            return new RankingEntry(
-              idx + 1,
-              user?.display_name || user?.username || 'Unknown',
-              r.claimed_score,
-              '',
-              user?.pfp_url,
-              user?.username
-            );
-          });
-        } else if (activeTab === 'mining') {
-          const { data, error } = await supabase
-            .from('quest_player_stats')
-            .select(`
-              total_reward,
-              farcaster_users!inner (
-                username,
-                display_name,
-                pfp_url
-              )
-            `)
-            .order('total_reward', { ascending: false })
-            .limit(100);
-
-          if (error) throw error;
-          
-          rankingsData = data.map((r: any, idx: number) => {
-            const user = Array.isArray(r.farcaster_users) ? r.farcaster_users[0] : r.farcaster_users;
-            return new RankingEntry(
-              idx + 1,
-              user?.display_name || user?.username || 'Unknown',
-              r.total_reward,
-              '',
-              user?.pfp_url,
-              user?.username
-            );
-          });
-        } else {
-          const { data, error } = await supabase
-            .from('rankings')
-            .select('*')
-            .eq('game_id', activeTab)
-            .order('score', { ascending: false })
-            .limit(100);
-
-          if (error) throw error;
-          
-          rankingsData = data.map((r: any, idx: number) => new RankingEntry(
-            idx + 1, 
-            r.player_name, 
-            r.score, 
-            new Date(r.updated_at).toLocaleDateString()
-          ));
-        }
-        
-        setRankings(rankingsData);
-      } catch (err) {
-        setError(err instanceof Error ? err.message : 'ランキングの取得に失敗しました');
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchRanking();
-  }, [activeTab]);
-
   return (
     <div className="flex flex-col h-full pb-v-xl">
-      <h2 className="text-xl font-bold text-primary mb-v-md flex items-center gap-2">
-        <Trophy size={24} className="text-accent" />
-        ランキング
-      </h2>
+      <div className="flex items-center justify-between mb-v-md">
+        <h2 className="text-xl font-bold text-primary flex items-center gap-2">
+          <Trophy size={24} className="text-accent" />
+          ランキング
+        </h2>
+        <button 
+          onClick={() => fetchRanking(true)}
+          disabled={isLoading}
+          className="p-2 rounded-full bg-surface text-primary hover:bg-surface/80 transition-colors disabled:opacity-50"
+          title="更新"
+        >
+          <RefreshCcw size={20} className={isLoading ? 'animate-spin' : ''} />
+        </button>
+      </div>
 
       {/* タブナビゲーション */}
       <div className="bg-village/30 p-v-sm rounded-v-2xl mb-v-lg overflow-x-auto hide-scrollbar border border-surface/30">
