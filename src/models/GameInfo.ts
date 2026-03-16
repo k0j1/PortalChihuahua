@@ -7,6 +7,7 @@ export class GameInfo {
     public description: string,
     public icon: string,
     public iconUrl: string,
-    public color: string
+    public color: string,
+    public appId?: string
   ) {}
 }

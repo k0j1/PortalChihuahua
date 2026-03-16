@@ -27,7 +27,8 @@ export class GameService {
         '障害物を避けて走り続けるアクションゲーム！',
         'Dog',
         'https://runningchihuahua.k0j1.v2002.coreserver.jp/images/icon.png',
-        '#d97736'
+        '#d97736',
+        '3Si5HSEtMpTX'
       ),
       new GameInfo(
         'reversi',
@@ -37,7 +38,8 @@ export class GameService {
         '定番のボードゲーム。チワワと一緒に頭脳戦！',
         'Circle',
         'https://reversi.k0j1.v2002.coreserver.jp/images/icon.png',
-        '#4a7c59'
+        '#4a7c59',
+        'FYXr6t3KSLwo'
       ),
       new GameInfo(
         'mining',
@@ -47,7 +49,8 @@ export class GameService {
         'お宝を求めて地下深くへ掘り進め！',
         'Pickaxe',
         'https://miningquest.k0j1.v2002.coreserver.jp/images/icon.png',
-        '#795548'
+        '#795548',
+        'MR1ItBAqMlzR'
       ),
       new GameInfo(
         'quest',
@@ -57,7 +60,8 @@ export class GameService {
         '壮大な冒険に出発！チワワの本格RPG。',
         'Sword',
         'https://chihuahuaquest.k0j1.v2002.coreserver.jp/images/icon.png',
-        '#8b5a2b'
+        '#8b5a2b',
+        'EnmWQ9uvTlHa'
       )
     ];
   }

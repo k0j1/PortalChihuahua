@@ -167,9 +167,19 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ user, games }) => 
                         variant="primary" 
                         size="sm"
                         className="flex items-center gap-2 px-v-lg"
-                        onClick={() => {
-                          const isFarcaster = window.location.href.includes('farcaster');
-                          window.open(isFarcaster ? game.farcasterUrl : game.url, '_blank');
+                        onClick={async () => {
+                          const isFarcaster = window.location.href.includes('farcaster') || !!currentUser.fid;
+                          
+                          if (isFarcaster && game.farcasterUrl) {
+                            try {
+                              await sdk.actions.openMiniApp({ url: game.farcasterUrl });
+                            } catch (e) {
+                              console.error('Failed to open mini app via SDK:', e);
+                              window.open(game.farcasterUrl, '_blank');
+                            }
+                          } else {
+                            window.open(isFarcaster ? game.farcasterUrl : game.url, '_blank');
+                          }
                         }}
                       >
                         <Play size={14} fill="currentColor" />
