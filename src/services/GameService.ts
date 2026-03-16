@@ -10,11 +10,25 @@ export class GameService {
 
   private constructor() {}
 
+  private activityLogs: ActivityLog[] | null = null;
+
   public static getInstance(): GameService {
     if (!GameService.instance) {
       GameService.instance = new GameService();
     }
     return GameService.instance;
+  }
+
+  public setActivityLogs(logs: ActivityLog[]): void {
+    this.activityLogs = logs;
+  }
+
+  public getActivityLogs(): ActivityLog[] | null {
+    return this.activityLogs;
+  }
+
+  public clearActivityLogs(): void {
+    this.activityLogs = null;
   }
 
   public getGames(): GameInfo[] {
@@ -215,20 +229,6 @@ export class GameService {
       console.error('Error fetching overall ranking:', error);
       return [];
     }
-  }
-
-  public async getActivityLogs(): Promise<ActivityLog[]> {
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        resolve([
-          new ActivityLog('log_1', 'ポチ', 'https://picsum.photos/seed/pochi/50/50', 'mining', 'レア鉱石「オリハルコン」を発見！', '10分前', '0x1234...abcd'),
-          new ActivityLog('log_2', 'ハチ', 'https://picsum.photos/seed/hachi/50/50', 'running', '自己ベスト更新！(15,000m)', '30分前', '0x5678...efgh'),
-          new ActivityLog('log_3', 'シロ', 'https://picsum.photos/seed/shiro/50/50', 'reversi', '10連勝を達成！', '1時間前', '0x9abc...ijkl'),
-          new ActivityLog('log_4', 'クロ', 'https://picsum.photos/seed/kuro/50/50', 'quest', '魔王を討伐しました！', '2時間前', '0xdef0...mnop'),
-          new ActivityLog('log_5', 'ChihuahuaLover', 'https://picsum.photos/seed/chihuahua/50/50', 'mining', '初めての採掘に成功！', '3時間前', '0x1111...2222'),
-        ]);
-      }, 500);
-    });
   }
 
   public async getRanking(gameId: string): Promise<RankingEntry[]> {
