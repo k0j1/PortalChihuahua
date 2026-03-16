@@ -5,7 +5,7 @@ import { GameInfo } from '../../models/GameInfo';
 import { Card } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
 import { Play } from 'lucide-react';
-import { getChhBalance } from '../../services/blockchainService';
+import sdk from '@farcaster/frame-sdk';
 
 import packageJson from '../../../package.json';
 
@@ -33,9 +33,42 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ user, games }) => 
 
   useEffect(() => {
     const fetchBalance = async () => {
-      const address = currentUser.walletAddress;
-      if (address) {
-        getChhBalance(address as `0x${string}`).then(setChhBalance);
+      let address = currentUser.walletAddress;
+      
+      try {
+        const provider = await sdk.wallet.getEthereumProvider();
+        if (provider) {
+          if (!address) {
+            const accounts = await provider.request({ method: 'eth_requestAccounts' }) as string[];
+            if (accounts && accounts.length > 0) {
+              address = accounts[0];
+            }
+          }
+          
+          if (address) {
+            // Get balance using Farcaster SDK ethProvider
+            const CHH_CONTRACT = '0xb0525542e3d818460546332e76e511562dff9b07';
+            // balanceOf(address) signature is 0x70a08231
+            const cleanAddress = address.toLowerCase().replace('0x', '');
+            const paddedAddress = cleanAddress.padStart(64, '0');
+            const data = `0x70a08231${paddedAddress}`;
+            
+            const result = await provider.request({
+              method: 'eth_call',
+              params: [{ to: CHH_CONTRACT, data }, 'latest']
+            }) as string;
+            
+            if (result && result !== '0x') {
+              // Convert hex to BigInt and format to 18 decimals
+              const balanceWei = BigInt(result);
+              const balanceFormatted = (Number(balanceWei) / 1e18).toFixed(2);
+              setChhBalance(balanceFormatted);
+              return;
+            }
+          }
+        }
+      } catch (e) {
+        console.error('Error getting balance from Farcaster SDK:', e);
       }
     };
     

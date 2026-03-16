@@ -94,7 +94,7 @@ export class GameService {
       // Fetch game stats
       const [runningRes, reversiRes, questRes] = await Promise.all([
         supabase.from('running_player_stats').select('*').eq('fid', fid).single(),
-        supabase.from('reversi_player_stats').select('*').eq('fid', fid).single(),
+        supabase.from('reversi_game_stats').select('*').eq('fid', fid).single(),
         supabase.from('quest_player_stats').select('*').eq('fid', fid).single()
       ]);
 
@@ -105,9 +105,23 @@ export class GameService {
         levels.forEach(lvl => {
           const stats = reversiRes.data[lvl];
           if (stats && typeof stats === 'object') {
-            reversiWins += (stats as any).win || 0;
+            reversiWins += (stats as any).win || (stats as any).wins || 0;
+          } else if (typeof stats === 'number') {
+            // In case the column itself is just a number of wins
+            reversiWins += stats;
+          }
+          
+          // Also check if there are columns like level_1_wins
+          const lvlWins = reversiRes.data[`${lvl}_wins`] || reversiRes.data[`${lvl}_win`];
+          if (typeof lvlWins === 'number') {
+            reversiWins += lvlWins;
           }
         });
+        
+        // If there is a total_wins column
+        if (typeof reversiRes.data.total_wins === 'number') {
+          reversiWins = reversiRes.data.total_wins;
+        }
       }
 
       // Calculate total score (same logic as RankingView)
