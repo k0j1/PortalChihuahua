@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { motion } from 'motion/react';
+import React, { useState, useEffect, useRef } from 'react';
+import gsap from 'gsap';
 import { getRecentLogs } from '../../services/blockchainService';
 import { ActivityLog } from '../../models/ActivityLog';
 import { Activity, ExternalLink, RefreshCcw, Search } from 'lucide-react';
@@ -11,6 +11,7 @@ export const ActivityView: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
+  const listItemsRef = useRef<HTMLLIElement[]>([]);
 
   const fetchLogs = async (forceRefresh = false) => {
     const gameService = GameService.getInstance();
@@ -122,8 +123,8 @@ export const ActivityView: React.FC = () => {
           '0x193708bb0ac212e59fc44d6d6f3507f25bc97fd4': (val) => `クエスト報酬として${val}CHHを獲得しました`,
           '0x29521909c3b09bd7861fad32a49d12414c296c5a': (val) => `アイテム購入として${val}CHHを支払いました`,
           '0xade81d78b1380b3153bbc1c16116b890fce41d00': (val) => `ガチャ購入として${val}CHHを支払いました`,
-          '0xdde103f5bbf19f0f5d177be983c76e2a16d36416': (val) => `クエスト出発として${val}CHHを支払いました`,
-          '0x5f07a1992cb9a652b262dead336e4202349b77f5': (val) => `アイテム購入として${val}CHHを支払いました`
+          '0xdde103f5bbf19f0f5d177BE983C76e2a16D36416': (val) => `クエスト出発として${val}CHHを支払いました`,
+          '0x5f07a1992cb9a652b262dead336e4202349b77f5': (val) => `ゲーム内での支払いとして${val}CHHを支払いました`
         };
 
         const contractAddress = getContractAddress(log);
@@ -178,6 +179,22 @@ export const ActivityView: React.FC = () => {
     fetchLogs();
   }, []);
 
+  useEffect(() => {
+    if (logs.length > 0 && listItemsRef.current.length > 0) {
+      gsap.fromTo(listItemsRef.current, 
+        { opacity: 0, y: 10 }, 
+        { 
+          opacity: 1, 
+          y: 0, 
+          duration: 0.4, 
+          stagger: 0.05, 
+          ease: 'power2.out',
+          overwrite: true
+        }
+      );
+    }
+  }, [logs]);
+
   const filteredLogs = logs.filter(log => 
     log.userName.toLowerCase().includes(searchQuery.toLowerCase()) ||
     log.gameId.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -230,11 +247,9 @@ export const ActivityView: React.FC = () => {
         ) : filteredLogs.length > 0 ? (
           <ul className="flex-1 overflow-y-auto p-v-md space-y-v-md">
             {filteredLogs.map((log, idx) => (
-              <motion.li 
+              <li 
                 key={log.id}
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: idx * 0.1 }}
+                ref={(el) => { if (el) listItemsRef.current[idx] = el; }}
                 className="bg-village p-v-md rounded-v-md border border-surface/50 flex gap-v-md items-start"
               >
                 <div className="w-10 h-10 rounded-v-full overflow-hidden flex-shrink-0 border-2 border-surface">
@@ -260,7 +275,7 @@ export const ActivityView: React.FC = () => {
                     </a>
                   )}
                 </div>
-              </motion.li>
+              </li>
             ))}
           </ul>
         ) : (

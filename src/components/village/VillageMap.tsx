@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import { motion } from 'motion/react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
+import gsap from 'gsap';
 import { MapData, TileType } from '../../models/MapData';
 import { GameService } from '../../services/GameService';
 import { GameInfo } from '../../models/GameInfo';
@@ -15,9 +15,31 @@ export const VillageMap: React.FC = () => {
   const [rankings, setRankings] = useState<RankingEntry[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const characterRef = useRef<HTMLDivElement>(null);
+  const isFirstRender = useRef(true);
 
   const gameService = GameService.getInstance();
   const games = gameService.getGames();
+
+  useEffect(() => {
+    if (characterRef.current) {
+      const tileSize = window.innerWidth < 640 ? 48 : 64;
+      const targetX = pos.x * tileSize + 8;
+      const targetY = pos.y * tileSize + 8;
+
+      if (isFirstRender.current) {
+        gsap.set(characterRef.current, { x: targetX, y: targetY });
+        isFirstRender.current = false;
+      } else {
+        gsap.to(characterRef.current, {
+          x: targetX,
+          y: targetY,
+          duration: 0.3,
+          ease: 'power2.out'
+        });
+      }
+    }
+  }, [pos]);
 
   const move = useCallback((dx: number, dy: number, newDir: 'up' | 'down' | 'left' | 'right') => {
     setDirection(newDir);
@@ -110,14 +132,9 @@ export const VillageMap: React.FC = () => {
         </div>
 
         {/* チワワキャラクター */}
-        <motion.div
+        <div
+          ref={characterRef}
           className="absolute w-12 h-12 sm:w-16 sm:h-16 flex items-center justify-center z-10"
-          initial={false}
-          animate={{
-            x: pos.x * (window.innerWidth < 640 ? 48 : 64) + 8, // 8 is padding (p-v-sm)
-            y: pos.y * (window.innerWidth < 640 ? 48 : 64) + 8,
-          }}
-          transition={{ type: 'spring', stiffness: 300, damping: 25 }}
         >
           <div className="relative w-8 h-8 sm:w-10 sm:h-10 bg-accent rounded-v-full shadow-v-sm flex items-center justify-center border-2 border-primary">
             {/* チワワの顔の簡易表現 */}
@@ -130,7 +147,7 @@ export const VillageMap: React.FC = () => {
             <div className="absolute -top-2 -left-1 w-3 h-4 bg-accent rounded-t-full transform -rotate-12 border border-primary" />
             <div className="absolute -top-2 -right-1 w-3 h-4 bg-accent rounded-t-full transform rotate-12 border border-primary" />
           </div>
-        </motion.div>
+        </div>
       </div>
 
       {/* D-Pad (モバイル向け十字キー) */}

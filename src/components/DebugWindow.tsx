@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { motion, AnimatePresence } from 'motion/react';
+import gsap from 'gsap';
 import { X, Trash2, Terminal } from 'lucide-react';
 
 interface DebugWindowProps {
@@ -10,6 +10,34 @@ interface DebugWindowProps {
 export const DebugWindow: React.FC<DebugWindowProps> = ({ isOpen, onClose }) => {
   const [logs, setLogs] = useState<string[]>([]);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const windowRef = useRef<HTMLDivElement>(null);
+  const [shouldRender, setShouldRender] = useState(isOpen);
+
+  useEffect(() => {
+    if (isOpen) {
+      setShouldRender(true);
+      setTimeout(() => {
+        if (windowRef.current) {
+          gsap.fromTo(windowRef.current, 
+            { opacity: 0, y: 100 }, 
+            { opacity: 1, y: 0, duration: 0.4, ease: 'power2.out' }
+          );
+        }
+      }, 0);
+    } else {
+      if (windowRef.current) {
+        gsap.to(windowRef.current, {
+          opacity: 0,
+          y: 100,
+          duration: 0.3,
+          ease: 'power2.in',
+          onComplete: () => setShouldRender(false)
+        });
+      } else {
+        setShouldRender(false);
+      }
+    }
+  }, [isOpen]);
 
   useEffect(() => {
     const originalLog = console.log;
@@ -54,12 +82,10 @@ export const DebugWindow: React.FC<DebugWindowProps> = ({ isOpen, onClose }) => 
   }, [logs]);
 
   return (
-    <AnimatePresence>
-      {isOpen && (
-        <motion.div
-          initial={{ opacity: 0, y: 100 }}
-          animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0, y: 100 }}
+    <>
+      {shouldRender && (
+        <div
+          ref={windowRef}
           className="fixed inset-0 z-[100] flex flex-col bg-village/95 backdrop-blur-md"
         >
           <div className="flex items-center justify-between p-4 border-b border-surface/30">
@@ -106,8 +132,8 @@ export const DebugWindow: React.FC<DebugWindowProps> = ({ isOpen, onClose }) => 
               ))
             )}
           </div>
-        </motion.div>
+        </div>
       )}
-    </AnimatePresence>
+    </>
   );
 };

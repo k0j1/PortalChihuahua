@@ -1,5 +1,5 @@
-import React from 'react';
-import { motion } from 'motion/react';
+import React, { useEffect, useRef } from 'react';
+import gsap from 'gsap';
 import { VillageMap } from '../components/village/VillageMap';
 import { Button } from '../components/ui/Button';
 import { ArrowLeft } from 'lucide-react';
@@ -9,11 +9,17 @@ interface VillageScreenProps {
 }
 
 export const VillageScreen: React.FC<VillageScreenProps> = ({ onBack }) => {
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (containerRef.current) {
+      gsap.fromTo(containerRef.current, { opacity: 0 }, { opacity: 1, duration: 0.5 });
+    }
+  }, []);
+
   return (
-    <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
+    <div
+      ref={containerRef}
       className="flex flex-col min-h-screen bg-village"
     >
       <header className="flex items-center justify-between p-v-md bg-primary text-inverse shadow-v-md safe-area-pt">
@@ -31,6 +37,6 @@ export const VillageScreen: React.FC<VillageScreenProps> = ({ onBack }) => {
         
         <VillageMap />
       </main>
-    </motion.div>
+    </div>
   );
 };

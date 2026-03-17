@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { motion } from 'motion/react';
+import React, { useState, useEffect, useRef } from 'react';
+import gsap from 'gsap';
 import { supabase } from '../../services/supabaseClient';
 import { RankingEntry } from '../../models/RankingEntry';
 import { GameInfo } from '../../models/GameInfo';
@@ -15,6 +15,7 @@ export const RankingView: React.FC<RankingViewProps> = ({ games }) => {
   const [rankings, setRankings] = useState<RankingEntry[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const listItemsRef = useRef<HTMLLIElement[]>([]);
 
   const fetchRanking = async (forceRefresh = false) => {
     const gameService = GameService.getInstance();
@@ -190,6 +191,22 @@ export const RankingView: React.FC<RankingViewProps> = ({ games }) => {
     fetchRanking();
   }, [activeTab]);
 
+  useEffect(() => {
+    if (rankings.length > 0 && listItemsRef.current.length > 0) {
+      gsap.fromTo(listItemsRef.current, 
+        { opacity: 0, x: -20 }, 
+        { 
+          opacity: 1, 
+          x: 0, 
+          duration: 0.4, 
+          stagger: 0.05, 
+          ease: 'power2.out',
+          overwrite: true
+        }
+      );
+    }
+  }, [rankings]);
+
   const tabs = [
     { id: 'overall', title: '総合リワード', icon: '🏆' },
     { id: 'running', title: 'ランニング', icon: '🐕' },
@@ -247,11 +264,9 @@ export const RankingView: React.FC<RankingViewProps> = ({ games }) => {
         ) : rankings.length > 0 ? (
           <ul className="flex-1 overflow-y-auto p-v-md space-y-3">
             {rankings.map((entry, idx) => (
-              <motion.li 
+              <li 
                 key={`${entry.rank}-${entry.playerName}`}
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: idx * 0.05 }}
+                ref={(el) => { if (el) listItemsRef.current[idx] = el; }}
                 className="flex items-center justify-between bg-village p-v-md rounded-v-md border border-surface/50"
               >
                 <div className="flex items-center gap-v-md">
@@ -282,7 +297,7 @@ export const RankingView: React.FC<RankingViewProps> = ({ games }) => {
                     </div>
                     <span className="text-[10px] text-light/70">{entry.date}</span>
                   </div>
-              </motion.li>
+              </li>
             ))}
           </ul>
         ) : (

@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'motion/react';
+import React, { useState, useEffect, useRef } from 'react';
+import gsap from 'gsap';
 import { Header } from '../components/layout/Header';
 import { BottomNav, TabType } from '../components/layout/BottomNav';
 import { DashboardView } from './tabs/DashboardView';
@@ -16,6 +16,7 @@ export const BaseCampScreen: React.FC = () => {
   const [user, setUser] = useState<UserProfile | null>(null);
   const [games, setGames] = useState<GameInfo[]>([]);
   const [isDebugOpen, setIsDebugOpen] = useState(false);
+  const contentRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const gameService = GameService.getInstance();
@@ -24,6 +25,15 @@ export const BaseCampScreen: React.FC = () => {
     // ユーザープロフィールの取得
     gameService.getUserProfile().then(setUser).catch(console.error);
   }, []);
+
+  useEffect(() => {
+    if (contentRef.current) {
+      gsap.fromTo(contentRef.current, 
+        { opacity: 0, x: 20 }, 
+        { opacity: 1, x: 0, duration: 0.4, ease: 'power2.out' }
+      );
+    }
+  }, [activeTab]);
 
   const renderContent = () => {
     switch (activeTab) {
@@ -43,18 +53,12 @@ export const BaseCampScreen: React.FC = () => {
       <Header user={user} />
       
       <main className="flex-1 overflow-y-auto p-v-md">
-        <AnimatePresence mode="wait">
-          <motion.div
-            key={activeTab}
-            initial={{ opacity: 0, x: 20 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: -20 }}
-            transition={{ duration: 0.2 }}
-            className="h-full"
-          >
-            {renderContent()}
-          </motion.div>
-        </AnimatePresence>
+        <div
+          ref={contentRef}
+          className="h-full"
+        >
+          {renderContent()}
+        </div>
       </main>
 
       <BottomNav activeTab={activeTab} onTabChange={setActiveTab} />

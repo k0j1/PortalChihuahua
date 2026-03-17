@@ -1,5 +1,5 @@
-import React from 'react';
-import { motion } from 'motion/react';
+import React, { useRef } from 'react';
+import gsap from 'gsap';
 
 interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   variant?: 'primary' | 'secondary' | 'accent' | 'outline';
@@ -14,6 +14,7 @@ export const Button: React.FC<ButtonProps> = ({
   children,
   ...props
 }) => {
+  const buttonRef = useRef<HTMLButtonElement>(null);
   const baseStyles = 'inline-flex items-center justify-center font-bold transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-village-primary disabled:opacity-50 disabled:cursor-not-allowed';
   
   const variants = {
@@ -29,14 +30,41 @@ export const Button: React.FC<ButtonProps> = ({
     lg: 'px-6 py-3 text-lg rounded-v-lg',
   };
 
+  const handleMouseEnter = () => {
+    if (!props.disabled && buttonRef.current) {
+      gsap.to(buttonRef.current, { scale: 1.02, duration: 0.2, ease: 'power2.out' });
+    }
+  };
+
+  const handleMouseLeave = () => {
+    if (buttonRef.current) {
+      gsap.to(buttonRef.current, { scale: 1, duration: 0.2, ease: 'power2.out' });
+    }
+  };
+
+  const handleMouseDown = () => {
+    if (!props.disabled && buttonRef.current) {
+      gsap.to(buttonRef.current, { scale: 0.98, duration: 0.1, ease: 'power2.out' });
+    }
+  };
+
+  const handleMouseUp = () => {
+    if (!props.disabled && buttonRef.current) {
+      gsap.to(buttonRef.current, { scale: 1.02, duration: 0.1, ease: 'power2.out' });
+    }
+  };
+
   return (
-    <motion.button
-      whileHover={{ scale: props.disabled ? 1 : 1.02 }}
-      whileTap={{ scale: props.disabled ? 1 : 0.98 }}
+    <button
+      ref={buttonRef}
+      onMouseEnter={handleMouseEnter}
+      onMouseLeave={handleMouseLeave}
+      onMouseDown={handleMouseDown}
+      onMouseUp={handleMouseUp}
       className={`${baseStyles} ${variants[variant]} ${sizes[size]} ${className}`}
       {...props}
     >
       {children}
-    </motion.button>
+    </button>
   );
 };

@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { motion } from 'motion/react';
+import React, { useState, useEffect, useRef } from 'react';
+import gsap from 'gsap';
 import { UserProfile } from '../../models/UserProfile';
 import { GameInfo } from '../../models/GameInfo';
 import { Card } from '../../components/ui/Card';
@@ -16,6 +16,8 @@ interface DashboardViewProps {
 
 export const DashboardView: React.FC<DashboardViewProps> = ({ user, games }) => {
   const [chhBalance, setChhBalance] = useState<string>('0');
+  const profileRef = useRef<HTMLElement>(null);
+  const gameCardsRef = useRef<HTMLDivElement[]>([]);
 
   const guestUser: UserProfile = {
     id: 'guest',
@@ -34,53 +36,79 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ user, games }) => 
   useEffect(() => {
     const fetchBalance = async () => {
       let address = currentUser.walletAddress;
-      
+      const CHH_CONTRACT = '0xb0525542e3d818460546332e76e511562dff9b07';
+      const BASE_RPC_URL = 'https://mainnet.base.org';
+
       try {
-        const provider = await sdk.wallet.getEthereumProvider();
-        if (provider) {
-          if (!address) {
+        if (!address) {
+          const provider = await sdk.wallet.getEthereumProvider();
+          if (provider) {
             const accounts = await provider.request({ method: 'eth_requestAccounts' }) as string[];
             if (accounts && accounts.length > 0) {
               address = accounts[0];
             }
           }
-          
-          if (address) {
-            // Get balance using Farcaster SDK ethProvider
-            const CHH_CONTRACT = '0xb0525542e3d818460546332e76e511562dff9b07';
-            // balanceOf(address) signature is 0x70a08231
-            const cleanAddress = address.toLowerCase().replace('0x', '');
-            const paddedAddress = cleanAddress.padStart(64, '0');
-            const data = `0x70a08231${paddedAddress}`;
-            
-            const result = await provider.request({
+        }
+        
+        if (address) {
+          const response = await fetch(BASE_RPC_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              jsonrpc: '2.0',
+              id: 1,
               method: 'eth_call',
-              params: [{ to: CHH_CONTRACT, data }, 'latest']
-            }) as string;
-            
-            if (result && result !== '0x') {
-              // Convert hex to BigInt and format to 18 decimals
-              const balanceWei = BigInt(result);
-              const balanceFormatted = (Number(balanceWei) / 1e18).toFixed(2);
-              setChhBalance(balanceFormatted);
-              return;
-            }
+              params: [{
+                to: CHH_CONTRACT,
+                data: '0x70a08231' + address.replace('0x', '').toLowerCase().padStart(64, '0')
+              }, 'latest']
+            })
+          });
+
+          const result = await response.json();
+          
+          if (result.result && result.result !== '0x' && result.result.length > 2) {
+            const balanceBigInt = BigInt(result.result);
+            const numericBalance = Number(balanceBigInt) / 1e18;
+            setChhBalance(numericBalance.toFixed(2));
           }
         }
       } catch (e) {
-        console.error('Error getting balance from Farcaster SDK:', e);
+        console.error('Error getting balance:', e);
       }
     };
     
     fetchBalance();
   }, [currentUser]);
 
+  useEffect(() => {
+    if (profileRef.current) {
+      gsap.fromTo(profileRef.current, 
+        { opacity: 0, y: 30 }, 
+        { opacity: 1, y: 0, duration: 0.6, ease: 'back.out(1.7)' }
+      );
+    }
+
+    if (gameCardsRef.current.length > 0) {
+      gsap.fromTo(gameCardsRef.current, 
+        { opacity: 0, y: 20 }, 
+        { 
+          opacity: 1, 
+          y: 0, 
+          duration: 0.5, 
+          stagger: 0.1, 
+          ease: 'power2.out',
+          delay: 0.2
+        }
+      );
+    }
+  }, []);
+
   return (
     <div className="flex flex-col gap-v-lg pb-v-xl">
       {/* ユーザープロフィールセクション */}
-      <motion.section 
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
+      <section 
+        ref={profileRef}
         className="bg-surface p-v-lg rounded-v-lg shadow-v-md border border-surface flex flex-col items-center relative overflow-hidden"
       >
         <div className="absolute top-0 left-0 right-0 h-24 bg-primary/10" />
@@ -124,7 +152,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ user, games }) => 
             </div>
           </div>
         </div>
-      </motion.section>
+      </section>
 
       {/* ゲーム一覧セクション */}
       <section>
@@ -134,11 +162,9 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ user, games }) => 
         </h3>
         <div className="grid grid-cols-1 gap-v-md">
           {games.map((game, index) => (
-            <motion.div
+            <div
               key={game.id}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: index * 0.1 }}
+              ref={(el) => { if (el) gameCardsRef.current[index] = el; }}
             >
               <div 
                 className="flex flex-col bg-surface rounded-v-lg shadow-v-md border border-surface overflow-hidden group hover:shadow-v-lg transition-shadow duration-300"
@@ -247,7 +273,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ user, games }) => 
                   </div>
                 )}
               </div>
-            </motion.div>
+            </div>
           ))}
         </div>
       </section>
