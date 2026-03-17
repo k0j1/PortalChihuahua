@@ -50,10 +50,16 @@ export const ActivityView: React.FC = () => {
         const from = log.from?.toLowerCase() || '';
         const to = log.to?.toLowerCase() || '';
         const tokenAddress = log.rawContract?.address?.toLowerCase() || '';
+        const knownTokens = [
+          '0x29521909c3b09bd7861fad32a49d12414c296c5a',
+          '0xade81d78b1380b3153bbc1c16116b890fce41d00',
+          '0xdde103f5bbf19f0f5d177be983c76e2a16d36416'
+        ];
 
         if (fromContracts.includes(from)) return from;
         if (to === '0x5f07a1992cb9a652b262dead336e4202349b77f5') {
-          return tokenAddress;
+          if (knownTokens.includes(tokenAddress)) return tokenAddress;
+          return to;
         }
         if (toContracts.includes(to)) return to;
         return to;
@@ -94,6 +100,7 @@ export const ActivityView: React.FC = () => {
       });
 
       // Map Alchemy AssetTransfersResult to ActivityLog objects
+      let firstRouterLogLogged = false;
       const formattedLogs = rawLogs.map((log: any) => {
         const contractNames: Record<string, string> = {
           '0x65f5661319c4d23c973c806e1e006bb06d5557d2': 'RunningChihuahua',
@@ -103,7 +110,8 @@ export const ActivityView: React.FC = () => {
           '0x193708bb0ac212e59fc44d6d6f3507f25bc97fd4': 'MiningQuest',
           '0x29521909c3b09bd7861fad32a49d12414c296c5a': 'MiningQuest',
           '0xade81d78b1380b3153bbc1c16116b890fce41d00': 'MiningQuest',
-          '0xdde103f5bbf19f0f5d177be983c76e2a16d36416': 'MiningQuest'
+          '0xdde103f5bbf19f0f5d177be983c76e2a16d36416': 'MiningQuest',
+          '0x5f07a1992cb9a652b262dead336e4202349b77f5': 'MiningQuest'
         };
 
         const actionTexts: Record<string, (val: string) => string> = {
@@ -114,10 +122,17 @@ export const ActivityView: React.FC = () => {
           '0x193708bb0ac212e59fc44d6d6f3507f25bc97fd4': (val) => `クエスト報酬として${val}CHHを獲得しました`,
           '0x29521909c3b09bd7861fad32a49d12414c296c5a': (val) => `アイテム購入として${val}CHHを支払いました`,
           '0xade81d78b1380b3153bbc1c16116b890fce41d00': (val) => `ガチャ購入として${val}CHHを支払いました`,
-          '0xdde103f5bbf19f0f5d177be983c76e2a16d36416': (val) => `クエスト出発として${val}CHHを支払いました`
+          '0xdde103f5bbf19f0f5d177be983c76e2a16d36416': (val) => `クエスト出発として${val}CHHを支払いました`,
+          '0x5f07a1992cb9a652b262dead336e4202349b77f5': (val) => `アイテム購入として${val}CHHを支払いました`
         };
 
         const contractAddress = getContractAddress(log);
+
+        // 0x5f07... のトランザクションをコンソールに最初の一件だけ表示
+        if (contractAddress === '0x5f07a1992cb9a652b262dead336e4202349b77f5' && !firstRouterLogLogged) {
+          console.log('First Router Transaction:', log);
+          firstRouterLogLogged = true;
+        }
         const gameId = contractNames[contractAddress] || 'Unknown Game';
         const timestamp = log.metadata?.blockTimestamp 
           ? new Date(log.metadata.blockTimestamp).toLocaleString('ja-JP', { 
