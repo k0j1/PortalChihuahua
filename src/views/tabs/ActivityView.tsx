@@ -34,9 +34,7 @@ export const ActivityView: React.FC = () => {
       ];
 
       const toContracts = [
-        '0x29521909c3b09bd7861fad32a49d12414c296c5a',
-        '0xade81d78b1380b3153bbc1c16116b890fce41d00',
-        '0xdde103f5bbf19f0f5d177be983c76e2a16d36416',
+        '0x5f07a1992cb9a652b262dead336e4202349b77f5',
         '0x0d013d7dc17e8240595778d1db7241f176ca51f9'
       ];
 
@@ -51,7 +49,12 @@ export const ActivityView: React.FC = () => {
       const getContractAddress = (log: any) => {
         const from = log.from?.toLowerCase() || '';
         const to = log.to?.toLowerCase() || '';
+        const tokenAddress = log.rawContract?.address?.toLowerCase() || '';
+
         if (fromContracts.includes(from)) return from;
+        if (to === '0x5f07a1992cb9a652b262dead336e4202349b77f5') {
+          return tokenAddress;
+        }
         if (toContracts.includes(to)) return to;
         return to;
       };
