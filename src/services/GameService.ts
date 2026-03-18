@@ -3,7 +3,7 @@ import { RankingEntry } from '../models/RankingEntry';
 import { UserProfile } from '../models/UserProfile';
 import { ActivityLog } from '../models/ActivityLog';
 import { supabase } from './supabaseClient';
-import sdk from '@farcaster/frame-sdk';
+import sdk from '@farcaster/miniapp-sdk';
 
 export class GameService {
   private static instance: GameService;
@@ -97,7 +97,13 @@ export class GameService {
     let fidParam: string | undefined;
     
     try {
-      const context = await sdk.context;
+      // Add a timeout to sdk.context to prevent hanging in environments where the SDK doesn't initialize
+      const contextPromise = sdk.context;
+      const timeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('SDK context timeout')), 1000)
+      );
+      
+      const context = await Promise.race([contextPromise, timeoutPromise]) as any;
       fidParam = context?.user?.fid?.toString();
     } catch (e) {
       console.error('Error getting sdk context:', e);

@@ -27,6 +27,13 @@
   --spacing-village-md: 1.25rem;
   --spacing-village-lg: 2rem;
   --spacing-village-xl: 3rem;
+
+  --animate-shimmer: shimmer 3s infinite;
+  @keyframes shimmer {
+    100% {
+      transform: translateX(100%);
+    }
+  }
 }
 
 body {

@@ -5,7 +5,7 @@ import { GameInfo } from '../../models/GameInfo';
 import { Card } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
 import { Play } from 'lucide-react';
-import sdk from '@farcaster/frame-sdk';
+import sdk from '@farcaster/miniapp-sdk';
 
 import packageJson from '../../../package.json';
 

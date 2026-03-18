@@ -49,7 +49,7 @@ export const BaseCampScreen: React.FC = () => {
   };
 
   return (
-    <div className="flex flex-col min-h-screen bg-village pt-32 pb-36">
+    <div className="flex flex-col min-h-screen bg-village pt-20 pb-28">
       <Header user={user} />
       
       <main className="flex-1 overflow-y-auto p-v-md">
