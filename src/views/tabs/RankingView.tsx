@@ -111,14 +111,14 @@ export const RankingView: React.FC<RankingViewProps> = ({ games }) => {
         const { data, error } = await supabase
           .from('reversi_game_stats')
           .select(`
-            claimed_score,
+            points,
             farcaster_users!inner (
               username,
               display_name,
               pfp_url
             )
           `)
-          .order('claimed_score', { ascending: false })
+          .order('points', { ascending: false })
           .limit(100);
 
         if (error) throw error;
@@ -128,7 +128,7 @@ export const RankingView: React.FC<RankingViewProps> = ({ games }) => {
           return new RankingEntry(
             idx + 1,
             user?.display_name || user?.username || 'Unknown',
-            r.claimed_score,
+            r.points,
             '',
             user?.pfp_url,
             user?.username
@@ -190,14 +190,6 @@ export const RankingView: React.FC<RankingViewProps> = ({ games }) => {
 
   useEffect(() => {
     fetchRanking();
-    
-    // ページめくりアニメーション
-    if (notebookRef.current) {
-      gsap.fromTo(notebookRef.current,
-        { rotationY: 90, opacity: 0.5, transformOrigin: "left center" },
-        { rotationY: 0, opacity: 1, duration: 0.6, ease: "back.out(1.2)", clearProps: "transform" }
-      );
-    }
   }, [activeTab]);
 
   useEffect(() => {
@@ -217,14 +209,16 @@ export const RankingView: React.FC<RankingViewProps> = ({ games }) => {
   }, [rankings]);
 
   const tabs = [
-    { id: 'overall', title: '総合', icon: '🏆', color: 'bg-[#fef08a]', activeColor: 'bg-[#fde047]', shadow: 'shadow-yellow-500/20' },
-    { id: 'running', title: 'ラン', icon: '🐕', color: 'bg-[#fbcfe8]', activeColor: 'bg-[#f9a8d4]', shadow: 'shadow-pink-500/20' },
-    { id: 'reversi', title: 'リバーシ', icon: '⚪', color: 'bg-[#bfdbfe]', activeColor: 'bg-[#93c5fd]', shadow: 'shadow-blue-500/20' },
-    { id: 'mining', title: '採掘', icon: '⛏️', color: 'bg-[#bbf7d0]', activeColor: 'bg-[#86efac]', shadow: 'shadow-green-500/20' }
+    { id: 'overall', title: 'Reward', icon: '🏆', color: 'bg-[#fef08a]', activeColor: 'bg-[#fef08a]', notebookColor: 'bg-[#fef08a]' },
+    { id: 'running', title: 'Running', icon: '🐕', color: 'bg-[#fbcfe8]', activeColor: 'bg-[#fbcfe8]', notebookColor: 'bg-[#fbcfe8]' },
+    { id: 'reversi', title: 'Reversi', icon: '⚪', color: 'bg-[#bfdbfe]', activeColor: 'bg-[#bfdbfe]', notebookColor: 'bg-[#bfdbfe]' },
+    { id: 'mining', title: 'Mining', icon: '⛏️', color: 'bg-[#bbf7d0]', activeColor: 'bg-[#bbf7d0]', notebookColor: 'bg-[#bbf7d0]' }
   ];
 
+  const activeTabColor = tabs.find(t => t.id === activeTab)?.notebookColor || 'bg-[#fdfbf7]';
+
   return (
-    <div className="flex flex-col h-full pb-v-xl" style={{ perspective: '1000px' }}>
+    <div className="flex flex-col h-full pb-v-xl">
       <div className="flex items-center justify-between mb-4 px-2">
         <h2 className="text-xl font-black text-primary flex items-center gap-2 drop-shadow-sm">
           <Trophy size={24} className="text-accent" />
@@ -242,19 +236,18 @@ export const RankingView: React.FC<RankingViewProps> = ({ games }) => {
 
       <div className="relative flex-1 flex flex-col mt-2">
         {/* タブナビゲーション（付箋） */}
-        <div className="flex gap-1 px-4 z-10 relative -mb-1 overflow-x-auto hide-scrollbar">
+        <div className="flex gap-1 px-4 z-10 relative overflow-x-auto hide-scrollbar pt-2">
           {tabs.map((tab) => {
             const isActive = activeTab === tab.id;
             return (
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                className={`relative flex items-center gap-1 px-3 pt-3 pb-4 rounded-t-lg text-sm font-black transition-all duration-300 border-t border-x border-black/10 min-w-max ${
+                className={`relative flex items-center gap-1 px-3 pt-3 pb-3 rounded-t-lg text-sm font-black transition-all duration-300 border-t border-x border-black/10 min-w-max ${
                   isActive
-                    ? `${tab.activeColor} text-black shadow-[0_-4px_10px_rgba(0,0,0,0.1)] -translate-y-2 z-20`
-                    : `${tab.color} text-black/70 hover:-translate-y-1 hover:text-black z-10`
+                    ? `${tab.activeColor} text-black z-20`
+                    : `${tab.color} text-black/70 hover:text-black z-10 opacity-80`
                 }`}
-                style={{ transformOrigin: 'bottom center' }}
               >
                 <span className="text-base drop-shadow-sm">{tab.icon}</span>
                 {tab.title}
@@ -265,8 +258,7 @@ export const RankingView: React.FC<RankingViewProps> = ({ games }) => {
 
         {/* ノート本体 */}
         <div 
-          ref={notebookRef}
-          className="bg-[#fdfbf7] rounded-2xl rounded-tl-none shadow-[2px_4px_16px_rgba(0,0,0,0.15)] border border-[#e4d5b7] flex-1 overflow-hidden flex flex-col relative z-20 ml-2 mr-1"
+          className={`${activeTabColor} rounded-2xl rounded-tl-none shadow-[2px_4px_16px_rgba(0,0,0,0.15)] border border-[#e4d5b7] flex-1 overflow-hidden flex flex-col relative z-20 ml-2 mr-1`}
         >
           {/* ノートの装飾（左側の赤い線） */}
           <div className="absolute top-0 bottom-0 left-10 w-0.5 bg-red-400/30 z-0" />
@@ -279,7 +271,7 @@ export const RankingView: React.FC<RankingViewProps> = ({ games }) => {
           </div>
 
           {/* ノートの罫線背景 */}
-          <div className="absolute inset-0 bg-[linear-gradient(transparent_47px,#e4d5b7_48px)] bg-[length:100%_48px] z-0 opacity-50 mt-2" />
+          <div className="absolute inset-0 bg-[linear-gradient(transparent_47px,rgba(0,0,0,0.05)_48px)] bg-[length:100%_48px] z-0 opacity-50 mt-2" />
 
           <div className="relative z-10 flex-1 flex flex-col overflow-hidden pl-12 pr-2 py-2">
             {isLoading ? (
