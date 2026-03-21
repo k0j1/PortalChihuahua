@@ -44,12 +44,9 @@ export const Header: React.FC<HeaderProps> = ({ user }) => {
   return (
     <header 
       ref={headerRef}
-      className="fixed top-0 left-0 right-0 z-40 bg-gradient-to-r from-[#5c3a18] via-[#8b5a2b] to-[#5c3a18] text-white shadow-v-lg safe-area-pt border-b border-[#3e2723]/50"
+      className="fixed top-0 left-0 right-0 z-40 bg-primary text-white shadow-v-lg safe-area-pt border-b border-[#3e2723]/50"
     >
-      <div className="flex items-center justify-between px-v-md py-v-sm relative overflow-hidden">
-        {/* 光の反射エフェクト */}
-        <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full animate-shimmer" />
-        
+      <div className="flex items-center justify-between px-6 py-4 relative overflow-hidden">
         <h1 ref={titleRef} className="text-lg font-black tracking-tight drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)] relative z-10">
           ChihuahuaStatus
         </h1>
