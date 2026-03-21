@@ -43,4 +43,4 @@ jobs:
           username: ${{ secrets.FTP_USERNAME }}
           password: ${{ secrets.FTP_PASSWORD }}
           local-dir: ./dist/
-          server-dir: /public_html/ # Adjust this if the target directory on the server is different
+          server-dir: / # Adjust this if the target directory on the server is different
