@@ -4,10 +4,8 @@ import { UserProfile } from '../../models/UserProfile';
 import { GameInfo } from '../../models/GameInfo';
 import { Card } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
-import { Modal } from '../../components/ui/Modal';
-import { Play, Share2, Download } from 'lucide-react';
+import { Play, Share2 } from 'lucide-react';
 import sdk from '@farcaster/miniapp-sdk';
-import html2canvas from 'html2canvas';
 
 import packageJson from '../../../package.json';
 
@@ -18,9 +16,6 @@ interface DashboardViewProps {
 
 export const DashboardView: React.FC<DashboardViewProps> = ({ user, games }) => {
   const [chhBalance, setChhBalance] = useState<string>('0');
-  const [isShareModalOpen, setIsShareModalOpen] = useState(false);
-  const [previewImage, setPreviewImage] = useState<string | null>(null);
-  const [isGenerating, setIsGenerating] = useState(false);
   
   const profileRef = useRef<HTMLElement>(null);
   const gameCardsRef = useRef<HTMLDivElement[]>([]);
@@ -110,69 +105,29 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ user, games }) => 
     }
   }, []);
 
-  const handleGeneratePreview = async () => {
-    if (!profileRef.current) return;
-    
-    try {
-      setIsGenerating(true);
-      
-      // 一時的に共有ボタンを非表示にするためのクラスを追加
-      const shareBtn = profileRef.current.querySelector('.share-btn-container');
-      if (shareBtn) {
-        (shareBtn as HTMLElement).style.display = 'none';
-      }
-      
-      const canvas = await html2canvas(profileRef.current, {
-        useCORS: true,
-        backgroundColor: '#f4ecd8', // village bg color
-        scale: 2, // 高画質化
-        logging: false,
-      });
-      
-      // 共有ボタンの表示を元に戻す
-      if (shareBtn) {
-        (shareBtn as HTMLElement).style.display = 'flex';
-      }
-      
-      const dataUrl = canvas.toDataURL('image/png');
-      setPreviewImage(dataUrl);
-      setIsShareModalOpen(true);
-    } catch (error) {
-      console.error('Failed to generate preview image:', error);
-      alert('プレビュー画像の生成に失敗しました。');
-    } finally {
-      setIsGenerating(false);
-    }
-  };
-
   const handleShare = async () => {
-    if (!previewImage) return;
+    if (!currentUser.fid || currentUser.fid === 'Guest') {
+      alert('ゲストユーザーは共有できません。');
+      return;
+    }
     
     try {
-      const blob = await (await fetch(previewImage)).blob();
-      const file = new File([blob], 'chihuahua-status.png', { type: 'image/png' });
+      const shareUrl = `${window.location.origin}/share/${currentUser.fid}`;
       
-      if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
+      if (navigator.share && navigator.canShare) {
         await navigator.share({
           title: 'ChihuahuaStatus',
           text: 'My Chihuahua Status!',
-          files: [file]
+          url: shareUrl
         });
       } else {
-        // ダウンロードフォールバック
-        handleDownload();
+        // クリップボードにコピー
+        await navigator.clipboard.writeText(shareUrl);
+        alert('共有リンクをクリップボードにコピーしました！\n' + shareUrl);
       }
     } catch (error) {
-      console.error('Error sharing image:', error);
+      console.error('Error sharing:', error);
     }
-  };
-
-  const handleDownload = () => {
-    if (!previewImage) return;
-    const link = document.createElement('a');
-    link.href = previewImage;
-    link.download = `chihuahua-status-${currentUser.name}.png`;
-    link.click();
   };
 
   return (
@@ -190,9 +145,8 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ user, games }) => 
             v{packageJson.version}
           </span>
           <button 
-            onClick={handleGeneratePreview}
-            disabled={isGenerating}
-            className="p-1.5 bg-primary text-white rounded-full shadow-v-sm hover:scale-110 transition-transform disabled:opacity-50 disabled:hover:scale-100"
+            onClick={handleShare}
+            className="p-1.5 bg-primary text-white rounded-full shadow-v-sm hover:scale-110 transition-transform"
             title="ステータスを共有"
           >
             <Share2 size={14} />
@@ -357,43 +311,6 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ user, games }) => 
         </div>
       </section>
 
-      {/* 共有プレビューモーダル */}
-      <Modal
-        isOpen={isShareModalOpen}
-        onClose={() => setIsShareModalOpen(false)}
-        title="ステータスを共有"
-      >
-        <div className="flex flex-col items-center gap-v-md">
-          {previewImage ? (
-            <div className="w-full rounded-v-lg overflow-hidden shadow-v-md border border-surface">
-              <img src={previewImage} alt="Status Preview" className="w-full h-auto" />
-            </div>
-          ) : (
-            <div className="w-full h-48 flex items-center justify-center bg-village rounded-v-lg">
-              <span className="text-light">画像を生成中...</span>
-            </div>
-          )}
-          
-          <div className="flex gap-v-sm w-full mt-2">
-            <Button 
-              variant="primary" 
-              className="flex-1 flex items-center justify-center gap-2"
-              onClick={handleShare}
-            >
-              <Share2 size={18} />
-              <span>シェアする</span>
-            </Button>
-            <Button 
-              variant="outline" 
-              className="flex items-center justify-center gap-2 px-4"
-              onClick={handleDownload}
-              title="画像を保存"
-            >
-              <Download size={18} />
-            </Button>
-          </div>
-        </div>
-      </Modal>
     </div>
   );
 };
