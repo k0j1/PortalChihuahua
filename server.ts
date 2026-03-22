@@ -14,6 +14,7 @@ const __dirname = path.dirname(__filename);
 dotenv.config();
 
 const app = express();
+app.set('trust proxy', true);
 const PORT = 3000;
 
 // Supabase client
@@ -39,14 +40,20 @@ app.get("/api/og-image/:fid", async (req, res) => {
     const fid = req.params.fid;
     
     // Fetch user data from Supabase
-    const { data: userData, error: userError } = await supabase
+    const { data: dbUserData, error: userError } = await supabase
       .from('farcaster_users')
       .select('*')
       .eq('fid', fid)
       .single();
 
+    let userData = dbUserData;
     if (userError || !userData) {
-      return res.status(404).send('User not found');
+      // Fallback to default data instead of returning 404
+      userData = {
+        display_name: 'Farcaster User',
+        username: `user${fid}`,
+        pfp_url: 'https://chihuahuaportal.k0j1.v2002.coreserver.jp/default-og.png'
+      };
     }
 
     // Fetch scores
@@ -169,19 +176,38 @@ async function startServer() {
         let template = fs.readFileSync(path.resolve(__dirname, 'index.html'), 'utf-8');
         template = await vite.transformIndexHtml(url, template);
         
-        const ogImageUrl = \`\${req.protocol}://\${req.get('host')}/api/og-image/\${fid}\`;
-        const shareUrl = \`\${req.protocol}://\${req.get('host')}/share/\${fid}\`;
+        const ogImageUrl = `${req.protocol}://${req.get('host')}/api/og-image/${fid}`;
+        const shareUrl = `${req.protocol}://${req.get('host')}/share/${fid}`;
         
-        const metaTags = \`
+        const miniappEmbed = JSON.stringify({
+          version: "1",
+          imageUrl: ogImageUrl,
+          button: {
+            title: "View Status",
+            action: {
+              type: "launch_miniapp",
+              url: shareUrl,
+              name: "ChihuahuaStatus",
+              splashBackgroundColor: "#f4ecd8"
+            }
+          }
+        });
+        
+        const metaTags = `
           <meta property="og:title" content="ChihuahuaStatus" />
           <meta property="og:description" content="Check out my Chihuahua Status!" />
-          <meta property="og:image" content="\${ogImageUrl}" />
-          <meta property="og:url" content="\${shareUrl}" />
+          <meta property="og:image" content="${ogImageUrl}" />
+          <meta property="og:url" content="${shareUrl}" />
           <meta name="twitter:card" content="summary_large_image" />
-          <meta name="twitter:image" content="\${ogImageUrl}" />
-        \`;
+          <meta name="twitter:image" content="${ogImageUrl}" />
+          <meta name="fc:miniapp" content='${miniappEmbed}' />
+          <meta name="fc:frame" content='${miniappEmbed}' />
+        `;
         
-        const html = template.replace('</head>', \`\${metaTags}</head>\`);
+        const html = template
+          .replace(/<meta name="fc:miniapp".*?>/g, '')
+          .replace(/<meta name="fc:frame".*?>/g, '')
+          .replace('</head>', `${metaTags}</head>`);
         res.status(200).set({ 'Content-Type': 'text/html' }).end(html);
       } catch (e) {
         vite.ssrFixStacktrace(e as Error);
@@ -199,19 +225,38 @@ async function startServer() {
         const fid = req.params.fid;
         let template = fs.readFileSync(path.join(distPath, 'index.html'), 'utf-8');
         
-        const ogImageUrl = \`\${req.protocol}://\${req.get('host')}/api/og-image/\${fid}\`;
-        const shareUrl = \`\${req.protocol}://\${req.get('host')}/share/\${fid}\`;
+        const ogImageUrl = `${req.protocol}://${req.get('host')}/api/og-image/${fid}`;
+        const shareUrl = `${req.protocol}://${req.get('host')}/share/${fid}`;
         
-        const metaTags = \`
+        const miniappEmbed = JSON.stringify({
+          version: "1",
+          imageUrl: ogImageUrl,
+          button: {
+            title: "View Status",
+            action: {
+              type: "launch_miniapp",
+              url: shareUrl,
+              name: "ChihuahuaStatus",
+              splashBackgroundColor: "#f4ecd8"
+            }
+          }
+        });
+        
+        const metaTags = `
           <meta property="og:title" content="ChihuahuaStatus" />
           <meta property="og:description" content="Check out my Chihuahua Status!" />
-          <meta property="og:image" content="\${ogImageUrl}" />
-          <meta property="og:url" content="\${shareUrl}" />
+          <meta property="og:image" content="${ogImageUrl}" />
+          <meta property="og:url" content="${shareUrl}" />
           <meta name="twitter:card" content="summary_large_image" />
-          <meta name="twitter:image" content="\${ogImageUrl}" />
-        \`;
+          <meta name="twitter:image" content="${ogImageUrl}" />
+          <meta name="fc:miniapp" content='${miniappEmbed}' />
+          <meta name="fc:frame" content='${miniappEmbed}' />
+        `;
         
-        const html = template.replace('</head>', \`\${metaTags}</head>\`);
+        const html = template
+          .replace(/<meta name="fc:miniapp".*?>/g, '')
+          .replace(/<meta name="fc:frame".*?>/g, '')
+          .replace('</head>', `${metaTags}</head>`);
         res.status(200).set({ 'Content-Type': 'text/html' }).end(html);
       } catch (e) {
         res.sendFile(path.join(distPath, 'index.html'));
@@ -225,7 +270,7 @@ async function startServer() {
   }
 
   app.listen(PORT, "0.0.0.0", () => {
-    console.log(\`Server running on http://localhost:\${PORT}\`);
+    console.log(`Server running on http://localhost:${PORT}`);
   });
 }
 
