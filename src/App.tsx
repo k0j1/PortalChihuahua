@@ -11,7 +11,7 @@ export default function App() {
       const timeoutId = setTimeout(() => {
         console.log('Farcaster SDK initialization timed out, proceeding...');
         setIsSDKLoaded(true);
-      }, 1500);
+      }, 3000);
 
       try {
         console.log('Initializing Farcaster SDK...');
