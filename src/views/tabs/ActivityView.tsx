@@ -52,7 +52,7 @@ export const ActivityView: React.FC = () => {
         const to = log.to?.toLowerCase() || '';
         const tokenAddress = log.rawContract?.address?.toLowerCase() || '';
         const knownTokens = [
-          '0x29521909c3b09bd7861fad32a49d12414c296c5a',
+          '0xb0748f58befa009a42306c91e01ed9dd3378eb01',
           '0xade81d78b1380b3153bbc1c16116b890fce41d00',
           '0xdde103f5bbf19f0f5d177be983c76e2a16d36416'
         ];
@@ -109,7 +109,7 @@ export const ActivityView: React.FC = () => {
           '0x0d013d7dc17e8240595778d1db7241f176ca51f9': 'RunningChihuahua',
           '0x38156db0e482eb3a5c198d49917fdb6746344db1': 'Reversi',
           '0x193708bb0ac212e59fc44d6d6f3507f25bc97fd4': 'MiningQuest',
-          '0x29521909c3b09bd7861fad32a49d12414c296c5a': 'MiningQuest',
+          '0xb0748f58befa009a42306c91e01ed9dd3378eb01': 'MiningQuest',
           '0xade81d78b1380b3153bbc1c16116b890fce41d00': 'MiningQuest',
           '0xdde103f5bbf19f0f5d177be983c76e2a16d36416': 'MiningQuest',
           '0x5f07a1992cb9a652b262dead336e4202349b77f5': 'MiningQuest'
@@ -121,7 +121,7 @@ export const ActivityView: React.FC = () => {
           '0x0d013d7dc17e8240595778d1db7241f176ca51f9': (val) => `アイテム購入として${val}CHHを支払いました`,
           '0x38156db0e482eb3a5c198d49917fdb6746344db1': (val) => `ログインボーナスとして${val}CHHを獲得しました`,
           '0x193708bb0ac212e59fc44d6d6f3507f25bc97fd4': (val) => `クエスト報酬として${val}CHHを獲得しました`,
-          '0x29521909c3b09bd7861fad32a49d12414c296c5a': (val) => `アイテム購入として${val}CHHを支払いました`,
+          '0xb0748f58befa009a42306c91e01ed9dd3378eb01': (val) => `アイテム購入として${val}CHHを支払いました`,
           '0xade81d78b1380b3153bbc1c16116b890fce41d00': (val) => `ガチャ購入として${val}CHHを支払いました`,
           '0xdde103f5bbf19f0f5d177BE983C76e2a16D36416': (val) => `クエスト出発として${val}CHHを支払いました`,
           '0x5f07a1992cb9a652b262dead336e4202349b77f5': (val) => `ゲーム内での支払いとして${val}CHHを支払いました`
