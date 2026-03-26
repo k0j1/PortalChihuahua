@@ -6,7 +6,8 @@ import { Card } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
 import { Play, Share2 } from 'lucide-react';
 import sdk from '@farcaster/miniapp-sdk';
-import { isAddress } from 'viem';
+import { createPublicClient, custom, formatUnits } from 'viem';
+import { base } from 'viem/chains';
 
 import packageJson from '../../../package.json';
 
@@ -38,17 +39,11 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ user, games }) => 
   useEffect(() => {
     const fetchBalance = async () => {
       let address = currentUser.walletAddress;
-      const CHH_CONTRACT = '0xB0748f58befa009A42306c91E01ED9DD3378eb01';
-      const BASE_RPC_URL = 'https://mainnet.base.org';
+      const CHH_CONTRACT = '0xb0525542e3d818460546332e76e511562dff9b07';
 
       try {
-        let provider: any = null;
-        try {
-          provider = await sdk.wallet.getEthereumProvider();
-        } catch (e) {
-          console.warn('Failed to get Ethereum provider from SDK:', e);
-        }
-
+        const provider = await sdk.wallet.getEthereumProvider();
+        
         if (!address && provider) {
           const accounts = await provider.request({ method: 'eth_requestAccounts' }) as string[];
           if (accounts && accounts.length > 0) {
@@ -56,47 +51,26 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ user, games }) => 
           }
         }
         
-        if (address && isAddress(address)) {
-          let resultHex: string | null = null;
+        if (address && provider) {
+          const publicClient = createPublicClient({
+            chain: base,
+            transport: custom(provider),
+          });
 
-          if (provider) {
-            try {
-              resultHex = await provider.request({
-                method: 'eth_call',
-                params: [{
-                  to: CHH_CONTRACT,
-                  data: '0x70a08231' + address.replace('0x', '').toLowerCase().padStart(64, '0')
-                }, 'latest']
-              }) as string;
-            } catch (e) {
-              console.warn('Provider eth_call failed, falling back to fetch', e);
-            }
-          }
+          const balance = await publicClient.readContract({
+            address: CHH_CONTRACT as `0x${string}`,
+            abi: [{
+              "constant": true,
+              "inputs": [{"name": "_owner", "type": "address"}],
+              "name": "balanceOf",
+              "outputs": [{"name": "balance", "type": "uint256"}],
+              "type": "function"
+            }] as const,
+            functionName: 'balanceOf',
+            args: [address as `0x${string}`]
+          } as any);
 
-          if (!resultHex) {
-            const response = await fetch(BASE_RPC_URL, {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                jsonrpc: '2.0',
-                id: 1,
-                method: 'eth_call',
-                params: [{
-                  to: CHH_CONTRACT,
-                  data: '0x70a08231' + address.replace('0x', '').toLowerCase().padStart(64, '0')
-                }, 'latest']
-              })
-            });
-
-            const result = await response.json();
-            resultHex = result.result;
-          }
-          
-          if (resultHex && resultHex !== '0x' && resultHex.length > 2) {
-            const balanceBigInt = BigInt(resultHex);
-            const numericBalance = Number(balanceBigInt) / 1e18;
-            setChhBalance(numericBalance.toFixed(2));
-          }
+          setChhBalance(formatUnits(balance as bigint, 18));
         }
       } catch (e) {
         console.error('Error getting balance:', e);
