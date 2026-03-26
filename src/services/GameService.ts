@@ -100,7 +100,7 @@ export class GameService {
       // Add a timeout to sdk.context to prevent hanging in environments where the SDK doesn't initialize
       const contextPromise = sdk.context;
       const timeoutPromise = new Promise((_, reject) => 
-        setTimeout(() => reject(new Error('SDK context timeout')), 1000)
+        setTimeout(() => reject(new Error('SDK context timeout')), 3000)
       );
       
       const context = await Promise.race([contextPromise, timeoutPromise]) as any;
