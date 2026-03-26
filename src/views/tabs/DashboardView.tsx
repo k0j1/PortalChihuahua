@@ -6,7 +6,7 @@ import { Card } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
 import { Play, Share2 } from 'lucide-react';
 import sdk from '@farcaster/miniapp-sdk';
-import { createPublicClient, custom, formatUnits } from 'viem';
+import { createPublicClient, http, formatUnits } from 'viem';
 import { base } from 'viem/chains';
 
 import packageJson from '../../../package.json';
@@ -42,29 +42,33 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ user, games }) => 
       const CHH_CONTRACT = '0xb0525542e3d818460546332e76e511562dff9b07';
 
       try {
-        const provider = await sdk.wallet.getEthereumProvider();
-        
-        if (!address && provider) {
-          const accounts = await provider.request({ method: 'eth_requestAccounts' }) as string[];
-          if (accounts && accounts.length > 0) {
-            address = accounts[0];
+        // 1. ユーザーアドレスの確定
+        if (!address) {
+          const provider = await sdk.wallet.getEthereumProvider();
+          if (provider) {
+            const accounts = await provider.request({ method: 'eth_requestAccounts' }) as string[];
+            if (accounts && accounts.length > 0) {
+              address = accounts[0];
+            }
           }
         }
         
-        if (address && provider) {
+        if (address) {
+          // 2. 読み取り専用の Client を作成 (SDKのproviderは使わない)
           const publicClient = createPublicClient({
             chain: base,
-            transport: custom(provider),
+            transport: http('https://mainnet.base.org'),
           });
 
+          // 3. 残高取得 (readContract)
           const balance = await publicClient.readContract({
             address: CHH_CONTRACT as `0x${string}`,
             abi: [{
-              "constant": true,
-              "inputs": [{"name": "_owner", "type": "address"}],
-              "name": "balanceOf",
-              "outputs": [{"name": "balance", "type": "uint256"}],
-              "type": "function"
+              inputs: [{ name: "_owner", type: "address" }],
+              name: "balanceOf",
+              outputs: [{ name: "balance", type: "uint256" }],
+              stateMutability: "view",
+              type: "function"
             }] as const,
             functionName: 'balanceOf',
             args: [address as `0x${string}`]
