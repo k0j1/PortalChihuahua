@@ -28,7 +28,7 @@ const viemClient = createPublicClient({
   transport: http()
 });
 
-const CHH_CONTRACT = '0xb0525542e3d818460546332e76e511562dff9b07';
+const CHH_CONTRACT = '0xB0748f58befa009A42306c91E01ED9DD3378eb01';
 
 // API routes
 app.get("/api/health", (req, res) => {
@@ -72,7 +72,7 @@ app.get("/api/og-image/:fid", async (req, res) => {
     let chhBalance = '0';
     if (userData.custody_address) {
       try {
-        const balance = await viemClient.readContract({
+        const balance = await (viemClient as any).readContract({
           address: CHH_CONTRACT as `0x${string}`,
           abi: [{
             "constant": true,

@@ -4,7 +4,7 @@ import { Alchemy, Network, AssetTransfersCategory } from 'alchemy-sdk';
 
 const ALCHEMY_API_KEY = import.meta.env.VITE_ALCHEMY_API_KEY || 'y4ylt3H0bLrzPvadrGl0M';
 const ALCHEMY_URL = `https://base-mainnet.g.alchemy.com/v2/${ALCHEMY_API_KEY}`;
-const CHH_CONTRACT = '0xb0525542e3d818460546332e76e511562dff9b07';
+const CHH_CONTRACT = '0xB0748f58befa009A42306c91E01ED9DD3378eb01';
 
 const alchemyConfig = {
   apiKey: ALCHEMY_API_KEY,

@@ -37,7 +37,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ user, games }) => 
   useEffect(() => {
     const fetchBalance = async () => {
       let address = currentUser.walletAddress;
-      const CHH_CONTRACT = '0xb0525542e3d818460546332e76e511562dff9b07';
+      const CHH_CONTRACT = '0xB0748f58befa009A42306c91E01ED9DD3378eb01';
       const BASE_RPC_URL = 'https://mainnet.base.org';
 
       try {
