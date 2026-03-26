@@ -4,7 +4,7 @@ import path from "path";
 import fs from "fs";
 import { fileURLToPath } from 'url';
 import { createClient } from '@supabase/supabase-js';
-import { createPublicClient, http } from 'viem';
+import { createPublicClient, http, isAddress } from 'viem';
 import { base } from 'viem/chains';
 import dotenv from 'dotenv';
 
@@ -23,9 +23,11 @@ const supabaseAnonKey = process.env.VITE_SUPABASE_ANON_KEY || '';
 const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
 // Viem client
+const ALCHEMY_API_KEY = process.env.VITE_ALCHEMY_API_KEY || 'y4ylt3H0bLrzPvadrGl0M';
+const ALCHEMY_URL = `https://base-mainnet.g.alchemy.com/v2/${ALCHEMY_API_KEY}`;
 const viemClient = createPublicClient({
   chain: base,
-  transport: http()
+  transport: http(ALCHEMY_URL)
 });
 
 const CHH_CONTRACT = '0xB0748f58befa009A42306c91E01ED9DD3378eb01';
@@ -70,7 +72,7 @@ app.get("/api/og-image/:fid", async (req, res) => {
 
     // Fetch CHH balance
     let chhBalance = '0';
-    if (userData.custody_address) {
+    if (userData.custody_address && isAddress(userData.custody_address)) {
       try {
         const balance = await (viemClient as any).readContract({
           address: CHH_CONTRACT as `0x${string}`,

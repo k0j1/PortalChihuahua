@@ -6,6 +6,7 @@ import { Card } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
 import { Play, Share2 } from 'lucide-react';
 import sdk from '@farcaster/miniapp-sdk';
+import { isAddress } from 'viem';
 
 import packageJson from '../../../package.json';
 
@@ -51,7 +52,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ user, games }) => 
           }
         }
         
-        if (address) {
+        if (address && isAddress(address)) {
           const response = await fetch(BASE_RPC_URL, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
