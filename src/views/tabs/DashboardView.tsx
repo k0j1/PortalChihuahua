@@ -42,35 +42,58 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ user, games }) => 
       const BASE_RPC_URL = 'https://mainnet.base.org';
 
       try {
-        if (!address) {
-          const provider = await sdk.wallet.getEthereumProvider();
-          if (provider) {
-            const accounts = await provider.request({ method: 'eth_requestAccounts' }) as string[];
-            if (accounts && accounts.length > 0) {
-              address = accounts[0];
-            }
+        let provider: any = null;
+        try {
+          provider = await sdk.wallet.getEthereumProvider();
+        } catch (e) {
+          console.warn('Failed to get Ethereum provider from SDK:', e);
+        }
+
+        if (!address && provider) {
+          const accounts = await provider.request({ method: 'eth_requestAccounts' }) as string[];
+          if (accounts && accounts.length > 0) {
+            address = accounts[0];
           }
         }
         
         if (address && isAddress(address)) {
-          const response = await fetch(BASE_RPC_URL, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              jsonrpc: '2.0',
-              id: 1,
-              method: 'eth_call',
-              params: [{
-                to: CHH_CONTRACT,
-                data: '0x70a08231' + address.replace('0x', '').toLowerCase().padStart(64, '0')
-              }, 'latest']
-            })
-          });
+          let resultHex: string | null = null;
 
-          const result = await response.json();
+          if (provider) {
+            try {
+              resultHex = await provider.request({
+                method: 'eth_call',
+                params: [{
+                  to: CHH_CONTRACT,
+                  data: '0x70a08231' + address.replace('0x', '').toLowerCase().padStart(64, '0')
+                }, 'latest']
+              }) as string;
+            } catch (e) {
+              console.warn('Provider eth_call failed, falling back to fetch', e);
+            }
+          }
+
+          if (!resultHex) {
+            const response = await fetch(BASE_RPC_URL, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                jsonrpc: '2.0',
+                id: 1,
+                method: 'eth_call',
+                params: [{
+                  to: CHH_CONTRACT,
+                  data: '0x70a08231' + address.replace('0x', '').toLowerCase().padStart(64, '0')
+                }, 'latest']
+              })
+            });
+
+            const result = await response.json();
+            resultHex = result.result;
+          }
           
-          if (result.result && result.result !== '0x' && result.result.length > 2) {
-            const balanceBigInt = BigInt(result.result);
+          if (resultHex && resultHex !== '0x' && resultHex.length > 2) {
+            const balanceBigInt = BigInt(resultHex);
             const numericBalance = Number(balanceBigInt) / 1e18;
             setChhBalance(numericBalance.toFixed(2));
           }
