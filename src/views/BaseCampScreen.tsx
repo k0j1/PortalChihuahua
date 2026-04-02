@@ -11,6 +11,9 @@ import { GameInfo } from '../models/GameInfo';
 import { DebugWindow } from '../components/DebugWindow';
 import { Terminal } from 'lucide-react';
 
+// 管理者のFIDリスト
+const ADMIN_FIDS = ['406233', '1379028'];
+
 export const BaseCampScreen: React.FC = () => {
   const [activeTab, setActiveTab] = useState<TabType>('home');
   const [user, setUser] = useState<UserProfile | null>(null);
@@ -63,8 +66,8 @@ export const BaseCampScreen: React.FC = () => {
 
       <BottomNav activeTab={activeTab} onTabChange={setActiveTab} />
 
-      {/* Debug Button for FID 406233 */}
-      {user?.fid === '406233' && (
+      {/* Debug Button for Admins */}
+      {user?.fid && ADMIN_FIDS.includes(user.fid) && (
         <button
           onClick={() => setIsDebugOpen(true)}
           className="fixed bottom-24 right-4 z-50 p-3 rounded-full bg-primary text-inverse shadow-v-lg hover:scale-110 transition-transform"
