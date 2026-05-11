@@ -178,6 +178,7 @@ export class GameService {
       const overallRank = userRankEntry ? userRankEntry.rank : 0;
       
       const chihuahuaStats = await getChihuahuaQuestStats(userData.custody_address as `0x${string}`);
+      console.log('Chihuahua stats result:', chihuahuaStats);
 
       return new UserProfile(
         userData.fid.toString(),

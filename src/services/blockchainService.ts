@@ -129,6 +129,8 @@ export const getRecentActivity = async () => {
 
 export const getChihuahuaQuestStats = async (address: `0x${string}`) => {
   try {
+    console.log('Fetching stats for address:', address);
+    console.log('Target contract:', TARGET_CONTRACT);
     const [ids, counts] = await client.readContract({
       address: TARGET_CONTRACT as `0x${string}`,
       abi: parseAbi([
@@ -137,6 +139,8 @@ export const getChihuahuaQuestStats = async (address: `0x${string}`) => {
       functionName: 'getPlayerInventory',
       args: [address],
     } as any) as [bigint[], bigint[]];
+
+    console.log('Result from getPlayerInventory - ids:', ids, 'counts:', counts);
 
     let totalTreasures = 0n;
     let totalCHH = 0n;
@@ -155,16 +159,19 @@ export const getChihuahuaQuestStats = async (address: `0x${string}`) => {
         } as any) as [bigint, boolean];
         
         const [chhAmount, exists] = reward;
+        console.log(`Treasure ID ${ids[i]}: count ${count}, amount ${chhAmount}, exists ${exists}`);
         
         if (exists) {
             totalCHH += count * chhAmount;
         }
     }
     
-    return {
+    const result = {
         totalTreasures: Number(totalTreasures),
         totalCHH: formatUnits(totalCHH, 18),
     };
+    console.log('Final stats result:', result);
+    return result;
   } catch (error) {
     console.error('Failed to fetch ChihuahuaQuest stats', error);
     return { totalTreasures: 0, totalCHH: '0' };
