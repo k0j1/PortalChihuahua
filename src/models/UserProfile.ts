@@ -23,6 +23,7 @@ export class UserProfile {
     public chihuahuaQuestStats?: {
       totalTreasures: number;
       totalCHH: string;
-    }
+    },
+    public custodyAddress?: string
   ) {}
 }

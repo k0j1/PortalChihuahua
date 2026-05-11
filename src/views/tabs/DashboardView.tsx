@@ -35,6 +35,29 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ user, games }) => 
   };
 
   const currentUser = user || guestUser;
+  const [questStats, setQuestStats] = useState(currentUser.chihuahuaQuestStats);
+
+  useEffect(() => {
+    setQuestStats(currentUser.chihuahuaQuestStats);
+  }, [currentUser.chihuahuaQuestStats]);
+
+  useEffect(() => {
+    const fetchQuestStats = async () => {
+      if (currentUser.custodyAddress && currentUser.custodyAddress.startsWith('0x')) {
+        try {
+          const stats = await getChihuahuaQuestStats(currentUser.custodyAddress as `0x${string}`);
+          setQuestStats(stats);
+        } catch (e) {
+          console.error('Failed to fetch quest stats in Dashboard:', e);
+        }
+      }
+    };
+    
+    // アドレスが変更された、または統計がまだ取得できていない場合に再取得
+    if (currentUser.custodyAddress && (!questStats || (questStats.totalTreasures === 0 && questStats.totalCHH === '0'))) {
+      fetchQuestStats();
+    }
+  }, [currentUser.custodyAddress]);
 
   useEffect(() => {
     const fetchBalance = async () => {
@@ -303,11 +326,11 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ user, games }) => 
                       <div className="flex gap-4">
                         <div className="flex flex-col">
                             <span className="text-[10px] text-light uppercase font-bold">Total Treasures</span>
-                            <span className="text-sm font-black text-primary">💎 {currentUser.chihuahuaQuestStats?.totalTreasures || 0}</span>
+                            <span className="text-sm font-black text-primary">💎 {questStats?.totalTreasures || 0}</span>
                         </div>
                         <div className="flex flex-col">
                             <span className="text-[10px] text-light uppercase font-bold">Total CHH</span>
-                            <span className="text-sm font-black text-primary">🪙 {currentUser.chihuahuaQuestStats?.totalCHH || '0'}</span>
+                            <span className="text-sm font-black text-primary">🪙 {questStats?.totalCHH || '0'}</span>
                         </div>
                       </div>
                     )}
