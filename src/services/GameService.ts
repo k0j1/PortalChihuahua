@@ -177,7 +177,13 @@ export class GameService {
       const userRankEntry = overallRanking.find(entry => entry.username === userData.username);
       const overallRank = userRankEntry ? userRankEntry.rank : 0;
       
-      const chihuahuaStats = await getChihuahuaQuestStats(userData.custody_address as `0x${string}`);
+      const custodyAddress = userData.custody_address as `0x${string}` | undefined;
+      let chihuahuaStats = { totalTreasures: 0, totalCHH: '0' };
+      if (custodyAddress && custodyAddress.startsWith('0x')) {
+          chihuahuaStats = await getChihuahuaQuestStats(custodyAddress);
+      } else {
+          console.warn('Invalid or missing custody_address:', custodyAddress);
+      }
       console.log('Chihuahua stats result:', chihuahuaStats);
 
       return new UserProfile(
