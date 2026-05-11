@@ -5,6 +5,8 @@ import { Alchemy, Network, AssetTransfersCategory } from 'alchemy-sdk';
 const ALCHEMY_API_KEY = import.meta.env.VITE_ALCHEMY_API_KEY || 'y4ylt3H0bLrzPvadrGl0M';
 const ALCHEMY_URL = `https://base-mainnet.g.alchemy.com/v2/${ALCHEMY_API_KEY}`;
 const CHH_CONTRACT = '0xB0748f58befa009A42306c91E01ED9DD3378eb01';
+const USDC_CONTRACT = '0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913';
+const TARGET_CONTRACT = '0xfb79857eC43d3e035ea5e0b4670975231786d3a4';
 
 const alchemyConfig = {
   apiKey: ALCHEMY_API_KEY,
@@ -38,7 +40,8 @@ export const getRecentActivity = async () => {
     '0x65F5661319C4d23c973C806e1e006Bb06d5557D2',
     '0x9B9191f213Afe0588570028174C97b3751c20Db0',
     '0x38156DB0e482EB3a5C198d49917fdb6746344db1',
-    '0x193708bB0AC212E59fc44d6D6F3507F25Bc97fd4'
+    '0x193708bB0AC212E59fc44d6D6F3507F25Bc97fd4',
+    '0xfb79857ec43d3e035ea5e0b4670975231786d3a4'
   ];
 
   const toContracts = [
@@ -57,37 +60,35 @@ export const getRecentActivity = async () => {
   };
 
   try {
-    const fromPromises = fromContracts.map(contract => 
-      fetchWithRetry(() => alchemy.core.getAssetTransfers({
+    const fromPromises = fromContracts.map(contract => {
+      const params: any = {
         fromAddress: contract,
-        category: [
-          AssetTransfersCategory.EXTERNAL,
-          AssetTransfersCategory.ERC20,
-          AssetTransfersCategory.ERC721,
-          AssetTransfersCategory.ERC1155
-        ],
+        category: [AssetTransfersCategory.EXTERNAL, AssetTransfersCategory.ERC20, AssetTransfersCategory.ERC721, AssetTransfersCategory.ERC1155],
         withMetadata: true,
         maxCount: 100,
         order: 'desc' as any,
         toBlock: 'latest',
-      }))
-    );
+      };
+      return fetchWithRetry(() => alchemy.core.getAssetTransfers(params));
+    });
 
-    const toPromises = toContracts.map(contract => 
-      fetchWithRetry(() => alchemy.core.getAssetTransfers({
+    const toPromises = toContracts.map(contract => {
+      const params: any = {
         toAddress: contract,
-        category: [
-          AssetTransfersCategory.EXTERNAL,
-          AssetTransfersCategory.ERC20,
-          AssetTransfersCategory.ERC721,
-          AssetTransfersCategory.ERC1155
-        ],
+        category: [AssetTransfersCategory.EXTERNAL, AssetTransfersCategory.ERC20, AssetTransfersCategory.ERC721, AssetTransfersCategory.ERC1155],
         withMetadata: true,
         maxCount: 100,
         order: 'desc' as any,
         toBlock: 'latest',
-      }))
-    );
+      };
+      return fetchWithRetry(async () => {
+        const result = await alchemy.core.getAssetTransfers(params);
+        if (contract.toLowerCase() === TARGET_CONTRACT.toLowerCase()) {
+            console.log(`Debug transfers to ${TARGET_CONTRACT}:`, result.transfers);
+        }
+        return result;
+      });
+    });
 
     const results = await Promise.all([...fromPromises, ...toPromises]);
     
@@ -99,6 +100,15 @@ export const getRecentActivity = async () => {
     const mergedTransfers = results.flatMap(res => res.transfers)
       .filter(transfer => {
         if (!transfer.metadata.blockTimestamp) return false;
+        
+        // ターゲットコントラクトの特殊フィルタリング
+        if (transfer.from.toLowerCase() === TARGET_CONTRACT.toLowerCase() && transfer.asset !== 'CHH') {
+            return false;
+        }
+        if (transfer.to.toLowerCase() === TARGET_CONTRACT.toLowerCase() && transfer.asset !== 'USDC') {
+            return false;
+        }
+
         const txTime = new Date(transfer.metadata.blockTimestamp).getTime();
         return txTime >= oneMonthAgoTime; // 1ヶ月以内のトランザクションのみ
       })
