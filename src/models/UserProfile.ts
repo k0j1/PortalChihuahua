@@ -19,6 +19,10 @@ export class UserProfile {
       item01: number;
       item02: number;
       item03: number;
+    },
+    public chihuahuaQuestStats?: {
+      totalTreasures: number;
+      totalCHH: string;
     }
   ) {}
 }

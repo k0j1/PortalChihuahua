@@ -126,6 +126,51 @@ export const getRecentActivity = async () => {
   }
 };
 
+
+export const getChihuahuaQuestStats = async (address: `0x${string}`) => {
+  try {
+    const [ids, counts] = await client.readContract({
+      address: TARGET_CONTRACT as `0x${string}`,
+      abi: parseAbi([
+        'function getPlayerInventory(address player) view returns (uint256[] ids, uint256[] counts)'
+      ]),
+      functionName: 'getPlayerInventory',
+      args: [address],
+    } as any) as [bigint[], bigint[]];
+
+    let totalTreasures = 0n;
+    let totalCHH = 0n;
+
+    for (let i = 0; i < ids.length; i++) {
+        const count = counts[i];
+        totalTreasures += count;
+        
+        const reward = await client.readContract({
+            address: TARGET_CONTRACT as `0x${string}`,
+            abi: parseAbi([
+                'function treasureRewards(uint256 id) view returns (uint256 chhAmount, bool exists)'
+            ]),
+            functionName: 'treasureRewards',
+            args: [ids[i]],
+        } as any) as [bigint, boolean];
+        
+        const [chhAmount, exists] = reward;
+        
+        if (exists) {
+            totalCHH += count * chhAmount;
+        }
+    }
+    
+    return {
+        totalTreasures: Number(totalTreasures),
+        totalCHH: formatUnits(totalCHH, 18),
+    };
+  } catch (error) {
+    console.error('Failed to fetch ChihuahuaQuest stats', error);
+    return { totalTreasures: 0, totalCHH: '0' };
+  }
+};
+
 // 互換性のために残す
 export const getRecentLogs = async () => {
   return getRecentActivity();

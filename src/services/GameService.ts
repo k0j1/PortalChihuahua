@@ -4,6 +4,7 @@ import { UserProfile } from '../models/UserProfile';
 import { ActivityLog } from '../models/ActivityLog';
 import { supabase } from './supabaseClient';
 import sdk from '@farcaster/miniapp-sdk';
+import { getChihuahuaQuestStats } from './blockchainService';
 
 export class GameService {
   private static instance: GameService;
@@ -175,6 +176,8 @@ export class GameService {
       const overallRanking = await this.getOverallRanking();
       const userRankEntry = overallRanking.find(entry => entry.username === userData.username);
       const overallRank = userRankEntry ? userRankEntry.rank : 0;
+      
+      const chihuahuaStats = await getChihuahuaQuestStats(userData.custody_address as `0x${string}`);
 
       return new UserProfile(
         userData.fid.toString(),
@@ -196,7 +199,8 @@ export class GameService {
           item01: questRes.data.item01 || 0,
           item02: questRes.data.item02 || 0,
           item03: questRes.data.item03 || 0
-        } : undefined
+        } : undefined,
+        chihuahuaStats
       );
     } catch (error) {
       console.error('Error fetching user profile:', error);

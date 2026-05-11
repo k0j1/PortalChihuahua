@@ -300,9 +300,15 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ user, games }) => 
                       </div>
                     )}
                     {game.id === 'quest' && (
-                      <div className="flex flex-col">
-                        <span className="text-[10px] text-light uppercase font-bold">Status</span>
-                        <span className="text-sm font-black text-primary">No stats available</span>
+                      <div className="flex gap-4">
+                        <div className="flex flex-col">
+                            <span className="text-[10px] text-light uppercase font-bold">Total Treasures</span>
+                            <span className="text-sm font-black text-primary">💎 {currentUser.chihuahuaQuestStats?.totalTreasures || 0}</span>
+                        </div>
+                        <div className="flex flex-col">
+                            <span className="text-[10px] text-light uppercase font-bold">Total CHH</span>
+                            <span className="text-sm font-black text-primary">🪙 {currentUser.chihuahuaQuestStats?.totalCHH || '0'}</span>
+                        </div>
                       </div>
                     )}
                   </div>
