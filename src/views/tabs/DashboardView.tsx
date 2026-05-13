@@ -8,8 +8,11 @@ import { Play, Share2 } from 'lucide-react';
 import sdk from '@farcaster/miniapp-sdk';
 import { createPublicClient, http, formatUnits } from 'viem';
 import { base } from 'viem/chains';
+import { getChihuahuaQuestStats } from '../../services/blockchainService';
 
 import packageJson from '../../../package.json';
+
+import { useLanguage } from '../../contexts/LanguageContext';
 
 interface DashboardViewProps {
   user: UserProfile | null;
@@ -17,6 +20,7 @@ interface DashboardViewProps {
 }
 
 export const DashboardView: React.FC<DashboardViewProps> = ({ user, games }) => {
+  const { t } = useLanguage();
   const [chhBalance, setChhBalance] = useState<string>('0');
   
   const profileRef = useRef<HTMLElement>(null);
@@ -132,7 +136,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ user, games }) => 
 
   const handleShare = async () => {
     if (!currentUser.fid || currentUser.fid === 'Guest') {
-      alert('ゲストユーザーは共有できません。');
+      alert(t('guest_cannot_share'));
       return;
     }
     
@@ -148,7 +152,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ user, games }) => 
       } else {
         // クリップボードにコピー
         await navigator.clipboard.writeText(shareUrl);
-        alert('共有リンクをクリップボードにコピーしました！\n' + shareUrl);
+        alert(t('share_copied') + shareUrl);
       }
     } catch (error) {
       console.error('Error sharing:', error);
@@ -172,7 +176,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ user, games }) => 
           <button 
             onClick={handleShare}
             className="p-1.5 bg-primary text-white rounded-full shadow-v-sm hover:scale-110 transition-transform"
-            title="ステータスを共有"
+            title={t('share_status')}
           >
             <Share2 size={14} />
           </button>
@@ -187,26 +191,26 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ user, games }) => 
             )}
           </div>
           <h2 className="text-xl font-bold text-primary">{currentUser.name}</h2>
-          <p className="text-sm text-light font-mono mb-v-md">{currentUser.farcasterId === 'Guest' ? 'Guest User' : `@${currentUser.username}`}</p>
+          <p className="text-sm text-light font-mono mb-v-md">{currentUser.farcasterId === 'Guest' ? t('guest_user') : `@${currentUser.username}`}</p>
           
           <div className="flex gap-v-md w-full max-w-xs mb-v-md">
             <div className="flex-1 bg-village p-v-md rounded-v-md text-center border border-surface">
-              <p className="text-xs text-light font-bold mb-1">$CHH保有枚数</p>
+              <p className="text-xs text-light font-bold mb-1">{t('chh_balance')}</p>
               <p className="text-lg font-black text-primary">{parseFloat(chhBalance).toLocaleString()}</p>
             </div>
           </div>
 
           <div className="flex gap-v-md w-full max-w-xs">
             <div className="flex-1 bg-village p-v-md rounded-v-md text-center border border-surface">
-              <p className="text-xs text-light font-bold mb-1">総合リワード</p>
+              <p className="text-xs text-light font-bold mb-1">{t('total_reward')}</p>
               <div className="flex items-baseline justify-center gap-1">
                 <p className="text-lg font-black text-accent">{currentUser.totalScore.toLocaleString()}</p>
                 <span className="text-[10px] font-bold text-accent">CHH</span>
               </div>
             </div>
             <div className="flex-1 bg-village p-v-md rounded-v-md text-center border border-surface">
-              <p className="text-xs text-light font-bold mb-1">総合ランク</p>
-              <p className="text-lg font-black text-secondary">{currentUser.overallRank > 0 ? `${currentUser.overallRank}位` : '-'}</p>
+              <p className="text-xs text-light font-bold mb-1">{t('overall_rank')}</p>
+              <p className="text-lg font-black text-secondary">{currentUser.overallRank > 0 ? `${currentUser.overallRank}${t('th')}` : '-'}</p>
             </div>
           </div>
         </div>
@@ -216,7 +220,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ user, games }) => 
       <section>
         <h3 className="text-lg font-bold text-primary mb-v-md flex items-center gap-2">
           <span className="w-1 h-6 bg-accent rounded-v-full"></span>
-          ゲームリスト
+          {t('game_list')}
         </h3>
         <div className="grid grid-cols-1 gap-v-md">
           {games.map((game, index) => (
@@ -242,8 +246,12 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ user, games }) => 
                   
                   <div className="flex-1 p-v-md flex flex-col justify-between">
                     <div>
-                      <h4 className="font-black text-lg text-body leading-tight mb-1">{game.title}</h4>
-                      <p className="text-xs text-light line-clamp-2">{game.description}</p>
+                      <h4 className="font-black text-lg text-body leading-tight mb-1">
+                        {t(`game_${game.id}_title`) !== `game_${game.id}_title` ? t(`game_${game.id}_title`) : game.title}
+                      </h4>
+                      <p className="text-xs text-light line-clamp-2">
+                        {t(`game_${game.id}_desc`) !== `game_${game.id}_desc` ? t(`game_${game.id}_desc`) : game.description}
+                      </p>
                     </div>
                     
                     <div className="flex justify-end mt-2">
@@ -267,7 +275,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ user, games }) => 
                         }}
                       >
                         <Play size={14} fill="currentColor" />
-                        <span className="text-xs font-black">START</span>
+                        <span className="text-xs font-black">{t('start')}</span>
                       </Button>
                     </div>
                   </div>

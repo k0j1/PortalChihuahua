@@ -5,8 +5,10 @@ import { ActivityLog } from '../../models/ActivityLog';
 import { Activity, ExternalLink, RefreshCcw, Search } from 'lucide-react';
 import { supabase } from '../../services/supabaseClient';
 import { GameService } from '../../services/GameService';
+import { useLanguage } from '../../contexts/LanguageContext';
 
 export const ActivityView: React.FC = () => {
+  const { t } = useLanguage();
   const [logs, setLogs] = useState<ActivityLog[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -118,16 +120,16 @@ export const ActivityView: React.FC = () => {
         };
 
         const actionTexts: Record<string, (val: string) => string> = {
-          '0x65f5661319c4d23c973c806e1e006bb06d5557d2': (val) => `スコア報酬として${val}CHHを獲得しました`,
-          '0x9b9191f213afe0588570028174c97b3751c20db0': (val) => `ログインボーナスとして${val}CHHを獲得しました`,
-          '0x0d013d7dc17e8240595778d1db7241f176ca51f9': (val) => `アイテム購入として${val}CHHを支払いました`,
-          '0x38156db0e482eb3a5c198d49917fdb6746344db1': (val) => `ログインボーナスとして${val}CHHを獲得しました`,
-          '0x193708bb0ac212e59fc44d6d6f3507f25bc97fd4': (val) => `クエスト報酬として${val}CHHを獲得しました`,
-          '0xb0748f58befa009a42306c91e01ed9dd3378eb01': (val) => `アイテム購入として${val}CHHを支払いました`,
-          '0xade81d78b1380b3153bbc1c16116b890fce41d00': (val) => `ガチャ購入として${val}CHHを支払いました`,
-          '0xdde103f5bbf19f0f5d177BE983C76e2a16D36416': (val) => `クエスト出発として${val}CHHを支払いました`,
-          '0x5f07a1992cb9a652b262dead336e4202349b77f5': (val) => `ゲーム内での支払いとして${val}CHHを支払いました`,
-          '0xfb79857ec43d3e035ea5e0b4670975231786d3a4': (val) => `報酬として${val}CHHを獲得しました`
+          '0x65f5661319c4d23c973c806e1e006bb06d5557d2': (val) => t('received_score_reward', val),
+          '0x9b9191f213afe0588570028174c97b3751c20db0': (val) => t('received_login_bonus', val),
+          '0x0d013d7dc17e8240595778d1db7241f176ca51f9': (val) => t('paid_item_purchase', val),
+          '0x38156db0e482eb3a5c198d49917fdb6746344db1': (val) => t('received_login_bonus', val),
+          '0x193708bb0ac212e59fc44d6d6f3507f25bc97fd4': (val) => t('received_quest_reward', val),
+          '0xb0748f58befa009a42306c91e01ed9dd3378eb01': (val) => t('paid_item_purchase', val),
+          '0xade81d78b1380b3153bbc1c16116b890fce41d00': (val) => t('paid_gacha_purchase', val),
+          '0xdde103f5bbf19f0f5d177be983c76e2a16d36416': (val) => t('paid_quest_departure', val),
+          '0x5f07a1992cb9a652b262dead336e4202349b77f5': (val) => t('paid_in_game', val),
+          '0xfb79857ec43d3e035ea5e0b4670975231786d3a4': (val) => t('received_reward', val)
         };
 
         const contractAddress = getContractAddress(log);
@@ -137,7 +139,7 @@ export const ActivityView: React.FC = () => {
           console.log('First Router Transaction:', log);
           firstRouterLogLogged = true;
         }
-        const gameId = contractNames[contractAddress] || 'Unknown Game';
+        const gameId = contractNames[contractAddress] || t('unknown_game');
         const timestamp = log.metadata?.blockTimestamp 
           ? new Date(log.metadata.blockTimestamp).toLocaleString('ja-JP', { 
               year: 'numeric', 
@@ -146,7 +148,7 @@ export const ActivityView: React.FC = () => {
               hour: '2-digit', 
               minute: '2-digit' 
             })
-          : '不明な時間';
+          : t('unknown_time');
 
         const userAddress = getUserAddress(log);
         const profile = profileMap.get(userAddress);
@@ -157,7 +159,7 @@ export const ActivityView: React.FC = () => {
         const valStr = log.value ? log.value.toString() : '0';
         const actionText = actionTexts[contractAddress] 
           ? actionTexts[contractAddress](valStr)
-          : `${log.value ? `${log.value} ${log.asset || 'ETH'}` : 'トランザクション'} が送信されました`;
+          : t('transaction_sent', log.value ? `${log.value} ${log.asset || 'ETH'}` : t('tx_sent'));
 
         return new ActivityLog(
           log.hash,
@@ -172,7 +174,7 @@ export const ActivityView: React.FC = () => {
       setLogs(formattedLogs);
       gameService.setActivityLogs(formattedLogs);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'エラーが発生しました');
+      setError(err instanceof Error ? err.message : t('error_occurred'));
     } finally {
       setIsLoading(false);
     }
@@ -209,20 +211,20 @@ export const ActivityView: React.FC = () => {
       <div className="flex items-center justify-between mb-v-md">
         <h2 className="text-xl font-bold text-primary flex items-center gap-2">
           <Activity size={24} className="text-secondary" />
-          アクティビティ
+          {t('activity')}
         </h2>
         <button 
           onClick={() => fetchLogs(true)}
           disabled={isLoading}
           className="p-2 rounded-full bg-surface text-primary hover:bg-surface/80 transition-colors disabled:opacity-50"
-          title="更新"
+          title={t('refresh')}
         >
           <RefreshCcw size={20} className={isLoading ? 'animate-spin' : ''} />
         </button>
       </div>
       
       <p className="text-sm text-light mb-v-md">
-        スマートコントラクトの履歴から最新の活動を表示しています。
+        {t('activity_desc')}
       </p>
 
       <div className="relative mb-v-md">
@@ -231,7 +233,7 @@ export const ActivityView: React.FC = () => {
         </div>
         <input
           type="text"
-          placeholder="ユーザー名、ゲーム、アクションで検索..."
+          placeholder={t('search_placeholder')}
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
           className="block w-full pl-10 pr-3 py-2 border border-surface rounded-v-md bg-surface text-body text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all"
@@ -241,7 +243,7 @@ export const ActivityView: React.FC = () => {
       <div className="bg-surface rounded-v-lg shadow-v-md border border-surface flex-1 overflow-hidden flex flex-col">
         {isLoading ? (
           <div className="flex-1 flex items-center justify-center text-light p-v-lg">
-            読み込み中...
+            {t('loading')}
           </div>
         ) : error ? (
           <div className="flex-1 flex items-center justify-center text-red-500 p-v-lg">
@@ -283,7 +285,7 @@ export const ActivityView: React.FC = () => {
           </ul>
         ) : (
           <div className="flex-1 flex items-center justify-center text-light p-v-lg">
-            アクティビティがありません
+            {t('no_activity')}
           </div>
         )}
       </div>

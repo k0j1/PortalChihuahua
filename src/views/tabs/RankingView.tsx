@@ -5,12 +5,14 @@ import { RankingEntry } from '../../models/RankingEntry';
 import { GameInfo } from '../../models/GameInfo';
 import { Trophy, RefreshCcw } from 'lucide-react';
 import { GameService } from '../../services/GameService';
+import { useLanguage } from '../../contexts/LanguageContext';
 
 interface RankingViewProps {
   games: GameInfo[];
 }
 
 export const RankingView: React.FC<RankingViewProps> = ({ games }) => {
+  const { t } = useLanguage();
   const [activeTab, setActiveTab] = useState<string>('overall');
   const [rankings, setRankings] = useState<RankingEntry[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -74,7 +76,7 @@ export const RankingView: React.FC<RankingViewProps> = ({ games }) => {
           .slice(0, 30)
           .map((item, idx) => new RankingEntry(
             idx + 1,
-            item.user?.display_name || item.user?.username || 'Unknown',
+            item.user?.display_name || item.user?.username || t('unknown'),
             Math.floor(item.score),
             '',
             item.user?.pfp_url,
@@ -100,7 +102,7 @@ export const RankingView: React.FC<RankingViewProps> = ({ games }) => {
           const user = Array.isArray(r.farcaster_users) ? r.farcaster_users[0] : r.farcaster_users;
           return new RankingEntry(
             idx + 1,
-            user?.display_name || user?.username || 'Unknown',
+            user?.display_name || user?.username || t('unknown'),
             r.total_score,
             '',
             user?.pfp_url,
@@ -127,7 +129,7 @@ export const RankingView: React.FC<RankingViewProps> = ({ games }) => {
           const user = Array.isArray(r.farcaster_users) ? r.farcaster_users[0] : r.farcaster_users;
           return new RankingEntry(
             idx + 1,
-            user?.display_name || user?.username || 'Unknown',
+            user?.display_name || user?.username || t('unknown'),
             r.points,
             '',
             user?.pfp_url,
@@ -154,7 +156,7 @@ export const RankingView: React.FC<RankingViewProps> = ({ games }) => {
           const user = Array.isArray(r.farcaster_users) ? r.farcaster_users[0] : r.farcaster_users;
           return new RankingEntry(
             idx + 1,
-            user?.display_name || user?.username || 'Unknown',
+            user?.display_name || user?.username || t('unknown'),
             r.total_reward,
             '',
             user?.pfp_url,
@@ -182,7 +184,7 @@ export const RankingView: React.FC<RankingViewProps> = ({ games }) => {
       setRankings(rankingsData);
       gameService.setRankingCache(activeTab, rankingsData);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'ランキングの取得に失敗しました');
+      setError(err instanceof Error ? err.message : t('failed_to_fetch_ranking'));
     } finally {
       setIsLoading(false);
     }
@@ -209,10 +211,10 @@ export const RankingView: React.FC<RankingViewProps> = ({ games }) => {
   }, [rankings]);
 
   const tabs = [
-    { id: 'overall', title: 'Reward', icon: '🏆', color: 'bg-[#fef08a]', activeColor: 'bg-[#fef08a]', notebookColor: 'bg-[#fef08a]' },
-    { id: 'running', title: 'Running', icon: '🐕', color: 'bg-[#fbcfe8]', activeColor: 'bg-[#fbcfe8]', notebookColor: 'bg-[#fbcfe8]' },
-    { id: 'reversi', title: 'Reversi', icon: '⚪', color: 'bg-[#bfdbfe]', activeColor: 'bg-[#bfdbfe]', notebookColor: 'bg-[#bfdbfe]' },
-    { id: 'mining', title: 'Mining', icon: '⛏️', color: 'bg-[#bbf7d0]', activeColor: 'bg-[#bbf7d0]', notebookColor: 'bg-[#bbf7d0]' }
+    { id: 'overall', title: t('reward'), icon: '🏆', color: 'bg-[#fef08a]', activeColor: 'bg-[#fef08a]', notebookColor: 'bg-[#fef08a]' },
+    { id: 'running', title: t('running'), icon: '🐕', color: 'bg-[#fbcfe8]', activeColor: 'bg-[#fbcfe8]', notebookColor: 'bg-[#fbcfe8]' },
+    { id: 'reversi', title: t('reversi'), icon: '⚪', color: 'bg-[#bfdbfe]', activeColor: 'bg-[#bfdbfe]', notebookColor: 'bg-[#bfdbfe]' },
+    { id: 'mining', title: t('mining'), icon: '⛏️', color: 'bg-[#bbf7d0]', activeColor: 'bg-[#bbf7d0]', notebookColor: 'bg-[#bbf7d0]' }
   ];
 
   const activeTabColor = tabs.find(t => t.id === activeTab)?.notebookColor || 'bg-[#fdfbf7]';
@@ -222,13 +224,13 @@ export const RankingView: React.FC<RankingViewProps> = ({ games }) => {
       <div className="flex items-center justify-between mb-4 px-2">
         <h2 className="text-xl font-black text-primary flex items-center gap-2 drop-shadow-sm">
           <Trophy size={24} className="text-accent" />
-          Ranking
+          {t('ranking')}
         </h2>
         <button 
           onClick={() => fetchRanking(true)}
           disabled={isLoading}
           className="p-2 rounded-full bg-surface text-primary hover:bg-surface/80 transition-colors disabled:opacity-50 shadow-sm"
-          title="更新"
+          title={t('refresh')}
         >
           <RefreshCcw size={20} className={isLoading ? 'animate-spin' : ''} />
         </button>
@@ -276,7 +278,7 @@ export const RankingView: React.FC<RankingViewProps> = ({ games }) => {
           <div className="relative z-10 flex-1 flex flex-col overflow-hidden pl-12 pr-2 py-2">
             {isLoading ? (
               <div className="flex-1 flex items-center justify-center text-[#8b5a2b] font-bold">
-                読み込み中...
+                {t('loading')}
               </div>
             ) : error ? (
               <div className="flex-1 flex items-center justify-center text-red-500 font-bold">
@@ -322,7 +324,7 @@ export const RankingView: React.FC<RankingViewProps> = ({ games }) => {
               </ul>
             ) : (
               <div className="flex-1 flex items-center justify-center text-[#8b5a2b] font-bold">
-                まだ記録がありません
+                {t('no_records')}
               </div>
             )}
           </div>

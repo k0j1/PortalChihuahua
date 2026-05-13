@@ -1,15 +1,17 @@
 import React, { useEffect, useState } from 'react';
 import { BaseCampScreen } from './views/BaseCampScreen';
 import sdk from '@farcaster/miniapp-sdk';
+import { LanguageProvider, useLanguage } from './contexts/LanguageContext';
 
 // 管理者のFIDリスト
 const ADMIN_FIDS = ['406233', '1379028'];
 // メンテナンスモードのフラグ
 const IS_MAINTENANCE = false;
 
-export default function App() {
+const MainApp = () => {
   const [isSDKLoaded, setIsSDKLoaded] = useState(false);
   const [userFid, setUserFid] = useState<string | null>(null);
+  const { t } = useLanguage();
 
   useEffect(() => {
     const init = async () => {
@@ -38,7 +40,7 @@ export default function App() {
   }, []);
 
   if (!isSDKLoaded) {
-    return <div className="w-full min-h-screen bg-village flex items-center justify-center text-primary">Loading...</div>;
+    return <div className="w-full min-h-screen bg-village flex items-center justify-center text-primary">{t('loading')}</div>;
   }
 
   // メンテナンスモードの判定
@@ -49,13 +51,10 @@ export default function App() {
         <div className="w-24 h-24 bg-primary/10 rounded-full flex items-center justify-center mb-6">
           <span className="text-4xl">🚧</span>
         </div>
-        <h1 className="text-2xl font-black text-primary mb-4">メンテナンス中</h1>
-        <p className="text-light max-w-xs">
-          現在、新機能の追加とシステム調整のためメンテナンスを行っております。<br />
-          完了まで今しばらくお待ちください。
-        </p>
+        <h1 className="text-2xl font-black text-primary mb-4">{t('maintenance')}</h1>
+        <p className="text-light max-w-xs">{t('maintenance_desc')}</p>
         <div className="mt-8 text-[10px] font-mono text-primary/30">
-          FID: {userFid || 'Unknown'}
+          FID: {userFid || t('unknown')}
         </div>
       </div>
     );
@@ -65,5 +64,13 @@ export default function App() {
     <div className="w-full min-h-screen bg-village font-village text-body overflow-hidden">
       <BaseCampScreen />
     </div>
+  );
+};
+
+export default function App() {
+  return (
+    <LanguageProvider>
+      <MainApp />
+    </LanguageProvider>
   );
 }

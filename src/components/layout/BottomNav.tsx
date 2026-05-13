@@ -1,6 +1,7 @@
 import React, { useEffect, useRef } from 'react';
 import gsap from 'gsap';
 import { Home, Trophy, Activity } from 'lucide-react';
+import { useLanguage } from '../../contexts/LanguageContext';
 
 export type TabType = 'home' | 'ranking' | 'activity';
 
@@ -10,13 +11,14 @@ interface BottomNavProps {
 }
 
 export const BottomNav: React.FC<BottomNavProps> = ({ activeTab, onTabChange }) => {
+  const { t } = useLanguage();
   const navRef = useRef<HTMLElement>(null);
   const tabsRef = useRef<(HTMLButtonElement | null)[]>([]);
 
   const tabs = [
-    { id: 'home', label: 'HOME', icon: Home },
-    { id: 'ranking', label: 'Ranking', icon: Trophy },
-    { id: 'activity', label: 'Activity', icon: Activity },
+    { id: 'home', label: t('home').toUpperCase(), icon: Home },
+    { id: 'ranking', label: t('ranking'), icon: Trophy },
+    { id: 'activity', label: t('activity'), icon: Activity },
   ] as const;
 
   // 初期表示アニメーション
