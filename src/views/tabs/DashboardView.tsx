@@ -140,22 +140,21 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ user, games }) => 
       return;
     }
     
+    const statsText = [
+      `🐕 ChihuahuaStatus for ${currentUser.name}`,
+      `💰 $CHH Balance: ${parseFloat(chhBalance).toLocaleString()}`,
+      `🏆 Total Reward: ${currentUser.totalScore.toLocaleString()}`,
+      `🏅 Overall Rank: ${currentUser.overallRank > 0 ? `${currentUser.overallRank}${t('th')}` : '-'}`,
+      `💎 Total Treasures: ${questStats?.totalTreasures || 0}`
+    ].join('\n');
+
+    const shareUrl = `https://warpcast.com/~/compose?text=${encodeURIComponent(statsText)}&embeds[]=${encodeURIComponent(window.location.origin)}`;
+
     try {
-      const shareUrl = `${window.location.origin}/share/${currentUser.fid}`;
-      
-      if (navigator.share && navigator.canShare) {
-        await navigator.share({
-          title: 'ChihuahuaStatus',
-          text: 'My Chihuahua Status!',
-          url: shareUrl
-        });
-      } else {
-        // クリップボードにコピー
-        await navigator.clipboard.writeText(shareUrl);
-        alert(t('share_copied') + shareUrl);
-      }
+      sdk.actions.openUrl(shareUrl);
     } catch (error) {
       console.error('Error sharing:', error);
+      window.open(shareUrl, '_blank');
     }
   };
 
